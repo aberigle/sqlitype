@@ -63,7 +63,7 @@ export class Model<T extends TSchema> extends Collection {
   }
 
   async findAndJoin(
-    filter: Partial<Static<T>> = {}
+    filter: FindQuery<Static<T>> = {}
   ) {
     await this.ensure()
     let select : string[] = [`SELECT ${this.table}.*`]
