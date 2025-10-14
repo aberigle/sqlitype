@@ -79,6 +79,11 @@ const antonios = await Users.find({
   name : "%Antonio%"
 })
 
+// users aged lower than 18
+const young = await Users.find({
+  age : { $lt : 18 }
+})
+
 // Specific user
 const user = await Users.findById(1);
 ```

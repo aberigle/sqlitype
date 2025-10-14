@@ -75,12 +75,17 @@ Métodos disponibles:
 const allUsers = await Users.find();
 
 // Usuarios de 28 años
-const adults = await Users.find({
+const adultos = await Users.find({
   age: 28
 });
 
 const antonios = await Users.find({
   name : "%Antonio%"
+})
+
+// usuarios con menos de 18 años
+const jovenes = await Users.find({
+  age : { $lt : 18 }
 })
 
 // Usuario específico
