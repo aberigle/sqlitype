@@ -162,7 +162,7 @@ export class Model<T extends TSchema> extends Collection {
   }
 
   async find(
-    search: Partial<Static<T>> = {}
+    search: FindQuery<Static<T>> = {}
   ): Promise<Array<Static<T>>> {
     const result = await super.find(search)
     return result.map(item => this.cast(item))

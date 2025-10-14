@@ -3,20 +3,22 @@
   "version": "0.0.1",
   "author": "@aberigle",
   "main": "dist/index.js",
-  "license" : "MIT",
+  "license": "MIT",
   "scripts": {
     "build:types": "tsc --project tsconfig.dts.json",
     "build": "bun test && bun run build:types && bun build.ts",
     "publishLocal": "bun run build && yalc publish --push"
   },
   "types": "dist/index.d.ts",
-  "files": ["/dist"],
-  "dependencies": {
-    "@sinclair/typebox": "^0.34.29"
-  },
+  "files": [
+    "/dist"
+  ],
   "devDependencies": {
     "@libsql/client": "^0.5.6",
     "@types/bun": "^1.2.4",
     "typescript": "^5.8.2"
+  },
+  "peerDependencies": {
+    "@sinclair/typebox": "^0.34.29"
   }
 }

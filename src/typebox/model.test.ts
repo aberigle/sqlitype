@@ -94,13 +94,16 @@ export function testModel(
     const schema = Type.Object({ id: Type.Number(), test: Type.Number(), date: Type.Date() })
     const model = new Model(schema, { name: "test", db: connection })
 
-    let date = new Date()
+    let date = new Date("2025-01-01")
     let inserted = await model.insert({ date, test: 2 })
 
     expect(() => Value.Assert(schema, inserted)).not.toThrow()
     expect(inserted.date).toEqual(date)
 
     let result = await model.find({ id: inserted.id })
+    expect(result[0].date).toEqual(date)
+
+    result = await model.find({ date: { $lt: new Date() } })
     expect(result[0].date).toEqual(date)
   })
 

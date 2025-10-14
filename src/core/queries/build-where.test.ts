@@ -22,6 +22,15 @@ describe("queries", () => {
       expect(args[0]).toEqual(2)
     })
 
+    it("supports less/greater than number", () => {
+      const { sql, args } = buildWhere({
+        number: new Field("number")
+      }, { number: { $lt: 2 } })
+
+      expect(sql).toEqual(`"number" < ?`)
+      expect(args[0]).toEqual(2)
+    })
+
     it("supports text", () => {
       const { sql, args } = buildWhere({
         text: new Field("string")
@@ -59,15 +68,24 @@ describe("queries", () => {
       expect(args[0]).toEqual(1738368000000)
     })
 
+    it("supports less/greater than number", () => {
+      const { sql, args } = buildWhere({
+        field: new Field("date")
+      }, { field: { $gt: new Date("2025-02-01") } })
+
+      expect(sql).toEqual(`"field::date" > ?`)
+      expect(args[0]).toEqual(1738368000000)
+    })
+
     it("supports multiple filters", () => {
       const { sql, args } = buildWhere({
-        field  : new Field("date"),
-        number : new Field("number"),
-        text   : new Field("string")
+        field: new Field("date"),
+        number: new Field("number"),
+        text: new Field("string")
       }, {
         field: new Date("2025-02-01"),
-        number : 2,
-        text : "%hola"
+        number: 2,
+        text: "%hola"
       })
 
       expect(sql).toEqual(`"field::date" = ? AND "number" = ? AND "text" LIKE ?`)
