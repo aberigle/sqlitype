@@ -2,6 +2,8 @@ import { Field } from "../field";
 import { getFieldName } from "../field/serialize";
 
 function getActionFromValue(value: any) {
+  if (value === null) return { action: "IS NULL", value: null }
+
   if (
     typeof value == 'string' && value.includes("%")
   ) return { action: "LIKE", value }
@@ -15,6 +17,8 @@ function getActionFromValue(value: any) {
   if (value.$lte) return { action: "<=", value: value.$lte }
   if (value.$gte) return { action: ">=", value: value.$gte }
   if (value.$gt)  return { action : ">", value: value.$gt }
+
+  return { action: "=", value }
 }
 
 export function buildWhere(
@@ -41,8 +45,9 @@ export function buildWhere(
 
     const { action, value } = getActionFromValue(filter[name])
 
-    values.push(field.cast(value))
-    conditions.push(`${table ? table + "." : ''}"${getFieldName(name, field)}" ${action} ?`)
+    if (value !== null) values.push(field.cast(value))
+
+    conditions.push(`${table ? table + "." : ''}"${getFieldName(name, field)}" ${action} ${value !== null ? '?' : ''}`)
   }
 
   return {

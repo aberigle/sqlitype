@@ -89,6 +89,13 @@ export function testCollection(
     expect(result.text).toBe("insert test")
   })
 
+  it('supports null', async() => {
+    let result = await col.insert({ newfield: "hola" })
+
+    result = await col.find({ newfield: null, id : result.id })
+    expect(result.length).toBe(0)
+  })
+
   it('supports booleans', async () => {
     let result = await col.insert({ success: true })
     result = await col.findById(result)

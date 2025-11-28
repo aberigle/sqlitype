@@ -1,16 +1,20 @@
 import { Collection, Field } from "@/core";
 import { buildWhere } from "@/core/queries/build-where";
 import { isEmpty } from "@/utils/objects";
-import { Static, TSchema, Type, Unknown } from "@sinclair/typebox";
+import { Static, TSchema, Type } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
 import { parseSchema } from "./transform/schema";
 import { ValidationException } from "./validation-exception";
+import { FindOptions, FindQuery } from "@/core/types";
+
 
 const cache: Record<string, Model<TSchema>> = {}
+let client: any
 const schemas: TSchema[] = []
 export class Model<T extends TSchema> extends Collection {
 
   static reload(db?) {
+    client = db
     for (const model of Object.values(cache)) {
       model.fields = {}
       if (db) model.setDb(db)
@@ -19,7 +23,7 @@ export class Model<T extends TSchema> extends Collection {
 
   constructor(
     public schema: T,
-    { db, name }: { db?: any, name?: string } = {}
+    { db = client, name }: { db?: any, name?: string } = {}
   ) {
     if (schema.$id === undefined) {
       if (name == undefined) throw new Error(`name or $id are mandatory`)
@@ -63,13 +67,14 @@ export class Model<T extends TSchema> extends Collection {
   }
 
   async findAndJoin(
-    filter: FindQuery<Static<T>> = {}
+    filter: FindQuery<Static<T>> = {},
+    options: FindOptions = {}
   ) {
     await this.ensure()
-    let select : string[] = [`SELECT ${this.table}.*`]
-    let from   : string   = `FROM ${this.table} `
-    let where  : string[] = []
-    let params : any[]    = []
+    let select: string[] = [`SELECT ${this.table}.*`]
+    let from: string = `FROM ${this.table} `
+    let where: string[] = []
+    let params: any[] = []
 
     const {
       sql,
@@ -81,10 +86,10 @@ export class Model<T extends TSchema> extends Collection {
     where.push(sql)
 
     async function processJoins(
-      fields   : Record<string, Field>,
-      table    : string,
-      filter   : Record<string, any>,
-      isNested : boolean = false
+      fields: Record<string, Field>,
+      table: string,
+      filter: Record<string, any>,
+      isNested: boolean = false
     ) {
       const result: string[] = []
 
@@ -104,11 +109,11 @@ export class Model<T extends TSchema> extends Collection {
 
         from += `${isRequired ? 'INNER' : 'LEFT'} JOIN ${model.table} AS ${field} ON ${field}.id = ${table}.${field} `
 
-        if (sql.length)  where.push(sql)
+        if (sql.length) where.push(sql)
         if (args.length) params.push(...args)
 
         // handle nested properties
-        const nested : string[] = []
+        const nested: string[] = []
         if (!isEmpty(joins)) {
           const prop = await processJoins(
             joins,
@@ -120,11 +125,11 @@ export class Model<T extends TSchema> extends Collection {
         }
 
         if (isNested) result.push(...[
-            `'${field}'`,// the field name
-            model.toJSON_OBJECT({ nested, alias : field }) // the field value as json
-          ])
+          `'${field}'`,// the field name
+          model.toJSON_OBJECT({ nested, alias: field }) // the field value as json
+        ])
         else select.push(
-          model.toJSON_OBJECT({ nested, alias : field }) + ` as '${field}' `
+          model.toJSON_OBJECT({ nested, alias: field }) + ` as '${field}' `
         )
       }
 
@@ -135,10 +140,16 @@ export class Model<T extends TSchema> extends Collection {
 
     where = where.filter(q => q)
 
+    let queryOptions = ""
+    if (options.order) queryOptions += ` ORDER BY  ${Object.entries(options.order).map(([key, value]) => `${key} ${value}`).join(",")}`
+    if (options.limit) queryOptions += ` LIMIT ${options.limit} `
+    if (options.offset) queryOptions += ` OFFSET ${options.offset} `
+
     return this.sql(
       select.join(", ") +
       from +
-      (where.length ? `WHERE ${where.join(" AND ")}` : ''),
+      (where.length ? `WHERE ${where.join(" AND ")}` : '') +
+      queryOptions,
       params
     )
   }
@@ -150,7 +161,7 @@ export class Model<T extends TSchema> extends Collection {
     await this.ensure()
     const result: Array<any> = await this.execute(query, params)
     return result
-    .map(item => this.cast(this.transform(item)))
+      .map(item => this.cast(this.transform(item)))
   }
 
   async insert(
@@ -162,9 +173,10 @@ export class Model<T extends TSchema> extends Collection {
   }
 
   async find(
-    search: FindQuery<Static<T>> = {}
+    search: FindQuery<Static<T>> = {},
+    options: FindOptions = {}
   ): Promise<Array<Static<T>>> {
-    const result = await super.find(search)
+    const result = await super.find(search, options)
     return result.map(item => this.cast(item))
   }
 

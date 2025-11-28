@@ -5,6 +5,7 @@ import { deduceFields } from "../field/deduce-field"
 import { parseFieldListFromDb } from "../field/parse-field"
 import { getFieldDefinition, getFieldName } from "../field/serialize"
 import { buildWhere } from "../queries/build-where"
+import { FindOptions } from "../types"
 
 const ID_FIELD = "id"
 
@@ -91,7 +92,7 @@ export default class Collection {
     }, item)
   }
 
-  async find(search = {}) {
+  async find(search = {}, options : FindOptions = {}) {
     let fields = await this.ensure({})
     if (isEmpty(fields)) return []
 
@@ -102,7 +103,11 @@ export default class Collection {
       args
     } = buildWhere(fields, search)
 
-    if (sql.length) query += `WHERE ${sql}`
+    if (sql.length) query += `WHERE ${sql} `
+
+    if (options.order)  query += ` ORDER BY  ${Object.entries(options.order).map((key, value) => `${key} ${value}`).join(",")}`
+    if (options.limit)  query += ` LIMIT ${options.limit} `
+    if (options.offset) query += ` OFFSET ${options.offset} `
 
     let result = await this.execute(query, args)
     return result.map(item => this.transform(item))
