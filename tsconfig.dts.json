@@ -5,11 +5,18 @@
     "node_modules",
     "**/node_modules/**",
     "**/__test__/**",
-    "*.test.ts",
+    "**/*.test.ts",
     "dist",
     "build.ts"
   ],
   "compilerOptions": {
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    }
   }
 }

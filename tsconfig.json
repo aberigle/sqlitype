@@ -11,14 +11,16 @@
     "declaration": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+    "emitDeclarationOnly": true,
     "allowJs": false,
-    "outDir": "build",
     "inlineSourceMap": true,
     "importHelpers": true,
     "strictBindCallApply": true,
     "strictFunctionTypes": true,
     "strictNullChecks": true,
     "skipLibCheck": true,
+    "rootDir": "./src",
+    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./src/*"
@@ -37,7 +39,7 @@
     "./node_modules/*",
     "./node_modules/@types/node/index.d.ts",
     "**/__test__/**",
-    "*.test.ts",
+    "**/*.test.ts",
     "dist",
     "build.ts"
   ]
