@@ -125,6 +125,24 @@ export function testModel(
     expect(found.object).toEqual(object)
   })
 
+  it('supports nested dates', async () => {
+    const schema = Type.Object({
+      id: Type.Number(),
+      nested: Type.Object({ date: Type.Date() })
+    })
+    const model = new Model(schema, { name: "test", db: connection })
+
+    const date = new Date("2025-06-15")
+    let inserted = await model.insert({ nested: { date } })
+
+    expect(() => Value.Assert(schema, inserted)).not.toThrow()
+    expect(inserted.nested.date).toEqual(date)
+
+    let found = await model.findById(inserted.id)
+    expect(found.nested.date).toEqual(date)
+    expect(found.nested.date).toBeInstanceOf(Date)
+  })
+
   it('supports arrays', async () => {
     const schema = Type.Object({
       id: Type.Number(),
@@ -195,7 +213,7 @@ export function testModel(
       id: Type.Number(),
       field: Type.String(),
       one: ModelReference(One),
-      another : Type.Optional(ModelReference(One))
+      another: Type.Optional(ModelReference(One))
     }, { $id: "Two" })
     const Two = new Model(TwoSchema, { db: connection })
 
@@ -207,8 +225,8 @@ export function testModel(
     const Three = new Model(ThreeSchema, { db: connection })
 
     it("creates relations", async () => {
-      const oneInserted     = await One.insert({ test: "references", date: new Date("2025-02-01") })
-      const twoInserted     = await Two.insert({ field: "adios", one: oneInserted })
+      const oneInserted = await One.insert({ test: "references", date: new Date("2025-02-01") })
+      const twoInserted = await Two.insert({ field: "adios", one: oneInserted })
 
       expect(twoInserted.one.id).toEqual(oneInserted.id)
 
@@ -226,7 +244,7 @@ export function testModel(
       const threeInserted = await Three.insert({ field: "three", two: result })
       expect(threeInserted.field).toBe("three")
 
-      const [three] = await Three.findAndJoin({ two: { one: { id: 1 }} })
+      const [three] = await Three.findAndJoin({ two: { one: { id: 1 } } })
       expect(three.field).toBe("three")
 
       const two = three.two as Static<typeof TwoSchema>
