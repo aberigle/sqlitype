@@ -48,7 +48,7 @@ export function testModel(
     const result = await model.find()
 
     expect(() => Value.Assert(Type.Array(schema), result)).not.toThrow()
-    expect(result.length).toBe(2)
+    expect(result.length).toBe(3)
     expect(() => Value.Assert(schema, result[0])).not.toThrow()
 
   })
