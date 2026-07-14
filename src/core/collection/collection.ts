@@ -1,4 +1,4 @@
-import { isEmpty } from "@/utils/objects"
+import { isEmpty } from "src/utils/objects"
 
 import { Field } from "../field"
 import { deduceFields } from "../field/deduce-field"
@@ -15,29 +15,29 @@ export default class Collection {
   fields: Record<string, Field>
 
   constructor(
-    db   : any,
-    name : string
+    db: any,
+    name: string
   ) {
-    this.db    = db
+    this.db = db
     this.table = name
     this.fields = {}
   }
 
   setDb(db) {
-    this.db     = db
+    this.db = db
     this.fields = {}
   }
 
   toJSON_OBJECT({
-    alias  = this.table,
+    alias = this.table,
     nested = []
   }: { alias?: string, nested?: string[] } = {}) {
     let fields: string[] = [`'id', ${alias}.id`]
 
     for (let [
-        name,
-        field
-      ] of Object.entries(this.fields)
+      name,
+      field
+    ] of Object.entries(this.fields)
       .filter(([name]) => name !== "id")
     ) {
       const fieldName = getFieldName(name, field)
@@ -74,10 +74,10 @@ export default class Collection {
 
       const columns: string[] = result.columns
       return result.rows
-      .map(item => columns.reduce((result, key, index) => {
-        result[key] = item[index]
-        return result
-      }, {}))
+        .map(item => columns.reduce((result, key, index) => {
+          result[key] = item[index]
+          return result
+        }, {}))
     } catch (error) {
       console.log(query, params, error)
       return []
@@ -86,13 +86,13 @@ export default class Collection {
 
   transform(item) {
     return Object.entries(this.fields)
-    .reduce((result, [name, field]) => {
-      result[name] = field.parse(result[getFieldName(name, field)])
-      return result
-    }, item)
+      .reduce((result, [name, field]) => {
+        result[name] = field.parse(result[getFieldName(name, field)])
+        return result
+      }, item)
   }
 
-  async find(search = {}, options : FindOptions = {}) {
+  async find(search = {}, options: FindOptions = {}) {
     let fields = await this.ensure({})
     if (isEmpty(fields)) return []
 
@@ -105,8 +105,8 @@ export default class Collection {
 
     if (sql.length) query += `WHERE ${sql} `
 
-    if (options.order)  query += ` ORDER BY  ${Object.entries(options.order).map((key, value) => `${key} ${value}`).join(",")}`
-    if (options.limit)  query += ` LIMIT ${options.limit} `
+    if (options.order) query += ` ORDER BY  ${Object.entries(options.order).map((key, value) => `${key} ${value}`).join(",")}`
+    if (options.limit) query += ` LIMIT ${options.limit} `
     if (options.offset) query += ` OFFSET ${options.offset} `
 
     let result = await this.execute(query, args)
@@ -182,7 +182,7 @@ export default class Collection {
 
     // check if we are missing any required field
     let missing = Object.keys(fields)
-      .filter(value => !(value in this.fields))
+      .filter(key => !(key in this.fields) || !this.fields[key].compare(fields[key]))
       .reduce((result, key) => {
         result[key] = fields[key]
         return result
@@ -210,7 +210,7 @@ export default class Collection {
 
     await this.run(query)
 
-    return { ...fields, [ID_FIELD] : new Field("id")}
+    return { ...fields, [ID_FIELD]: new Field("id") }
   }
 
   // alters a table to add some fields

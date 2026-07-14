@@ -5,13 +5,12 @@
       "esnext"
     ],
     "removeComments": false,
-    "module": "commonjs",
-    "moduleResolution": "node",
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "newLine": "LF",
-    "declaration": true,
+    "esModuleInterop": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "emitDeclarationOnly": true,
     "allowJs": false,
     "inlineSourceMap": true,
     "importHelpers": true,
@@ -21,14 +20,9 @@
     "skipLibCheck": true,
     "rootDir": "./src",
     "baseUrl": ".",
-    "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "~/*": [
-        "./*"
-      ]
-    }
+    "types": [
+      "bun"
+    ]
   },
   "include": [
     "src/**/*.ts"

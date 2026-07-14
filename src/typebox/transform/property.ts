@@ -1,6 +1,6 @@
-import { Field } from "@/core";
 import { TObject, TSchema, TUnion } from "@sinclair/typebox";
 import { Model } from "../model";
+import { Field } from "src/core";
 
 const Kind = Symbol.for("TypeBox.Kind")
 const Optional = Symbol.for("TypeBox.Optional")

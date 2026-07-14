@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'bun:test'
 import Collection from './collection';
 import Database from 'bun:sqlite';
-import { Client } from '@libsql/client/.';
+import { Client } from '@libsql/client';
 
 const db = new Database()
 function queryDB(query: string) {

@@ -1,6 +1,5 @@
 {
   "extends": "./tsconfig.json",
-
   "exclude": [
     "node_modules",
     "**/node_modules/**",
@@ -10,13 +9,10 @@
     "build.ts"
   ],
   "compilerOptions": {
+    "declaration": true,
+    "emitDeclarationOnly": true,
     "outDir": "./dist",
     "moduleResolution": "node",
     "baseUrl": ".",
-    "paths": {
-      "@/*": [
-        "./src/*"
-      ]
-    }
   }
 }

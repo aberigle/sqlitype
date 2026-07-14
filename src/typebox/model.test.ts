@@ -1,16 +1,17 @@
+import { Client } from '@libsql/client';
 import { Static, Type } from '@sinclair/typebox';
 import { Value } from '@sinclair/typebox/value';
 import Database from 'bun:sqlite';
 import { describe, expect, it } from 'bun:test';
 import { Model } from './model';
 import { ModelReference } from './model-reference';
-import { Client } from '@libsql/client/.';
 
 describe('typebox', () => describe("model (bun)", () => testModel(new Database())))
 
 export function testModel(
   connection: Database | Client
 ) {
+
   it('inserts in a new collection', async () => {
     const schema = Type.Object({ id: Type.Number(), test: Type.Number() })
     const model = new Model(schema, { name: "test", db: connection })

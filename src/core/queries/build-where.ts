@@ -22,9 +22,9 @@ function getActionFromValue(value: any) {
 }
 
 export function buildWhere(
-  fields: Record<string, Field>,
-  filter: Record<string, any>,
-  table: string = ""
+  fields : Record<string, Field>,
+  filter : Record<string, any>,
+  table  : string = ""
 ): {
   sql: string, args: any[], joins: Record<string, Field>
 } {
@@ -32,9 +32,9 @@ export function buildWhere(
 
   if (!keys.length) return { sql: '', args: [], joins: {} }
 
-  const values: any[] = []
-  const conditions: string[] = []
-  const joins: Record<string, Field> = {}
+  const values     : any[]                 = []
+  const conditions : string[]              = []
+  const joins      : Record<string, Field> = {}
 
   for (const name of keys) if (fields[name]) {
     const field = fields[name]

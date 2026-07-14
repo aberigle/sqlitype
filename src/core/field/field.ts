@@ -1,4 +1,4 @@
-import { Model } from "@/typebox"
+import { Model } from "src/typebox"
 import { FieldType } from "./types"
 
 export default class Field {

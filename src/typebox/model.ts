@@ -1,16 +1,16 @@
-import { Collection, Field } from "@/core";
-import { buildWhere } from "@/core/queries/build-where";
-import { isEmpty } from "@/utils/objects";
-import { Static, TSchema, Type } from "@sinclair/typebox";
-import { Value } from "@sinclair/typebox/value";
-import { parseSchema } from "./transform/schema";
-import { ValidationException } from "./validation-exception";
-import { FindOptions, FindQuery } from "@/core/types";
+import { Collection, Field } from "src/core"
+import { buildWhere } from "src/core/queries/build-where"
+import { isEmpty } from "src/utils/objects"
+import { Static, TSchema, Type } from "@sinclair/typebox"
+import { Value } from "@sinclair/typebox/value"
+import { parseSchema } from "./transform/schema"
+import { ValidationException } from "./validation-exception"
+import { FindOptions, FindQuery } from "src/core/types"
 
 
-const cache: Record<string, Model<TSchema>> = {}
-let client: any
-const schemas: TSchema[] = []
+const cache   : Record<string, Model<TSchema>> = {}
+let client    : any
+const schemas : TSchema[] = []
 export class Model<T extends TSchema> extends Collection {
 
   static reload(db?) {

@@ -1,4 +1,4 @@
-import { Field } from "@/core"
+import { Field } from "src/core"
 import { TSchema } from "@sinclair/typebox"
 import { Model } from "../model"
 import { parseProperty } from "./property"
