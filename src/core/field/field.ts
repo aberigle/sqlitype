@@ -2,7 +2,7 @@ import { Model } from "src/typebox"
 import { FieldType } from "./types"
 
 export default class Field {
-  ref: Model<any>
+  ref?: Model<any>
 
   constructor(
     public type     : FieldType,
@@ -13,6 +13,11 @@ export default class Field {
     this.ref = model
     return this
   }
+
+  compare(field : Field) {
+    return this.type === field.type
+  }
+
   /**
    * Reads a value from the db a returns is as javascript
    *

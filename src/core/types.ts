@@ -6,7 +6,7 @@ export interface FindOperators<T> {
 }
 
 export type FindQuery<T> = {
-  [K in keyof T]?: T[K] | FindOperators<T[K]>
+  [K in keyof T]?: T[K] | FindOperators<T[K]> | null
 }
 
 export type FindOptions = {

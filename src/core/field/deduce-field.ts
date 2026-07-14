@@ -16,7 +16,7 @@ export function deduceFieldType(
   if (type === 'object')
     type = value.constructor.name.toLowerCase()
 
-  if (!TypeMap[type]) throw new Error(`Unsupported type for ${value}!`)
+  if (type in TypeMap === false) throw new Error(`Unsupported type for ${value}!`)
 
   return new Field(type as FieldType)
 }
@@ -28,12 +28,16 @@ export function deduceFieldType(
  * @param {object} model - the model
  */
 export function deduceFields(
-  model : object
+  model: any
 ): Record<string, Field> {
+
   return Object.keys(model)
-  .filter(name => model[name] !== undefined)
-  .reduce((result, name) => {
-    result[name] = deduceFieldType(model[name])
-    return result
-  }, {})
+    .filter(name => model[name] !== undefined)
+    .reduce((
+      result,
+      name
+    ) => {
+      result[name] = deduceFieldType(model[name])
+      return result
+    }, {} as any)
 }
