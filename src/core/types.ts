@@ -7,7 +7,7 @@ export interface FindOperators<T> {
   $nin? : T[];  // NOT IN (?,?)
 }
 
-export type FindQuery<T> = {
+export type FindFilter<T> = {
   [K in keyof T]?: T[K] | FindOperators<T[K]> | null
 }
 

@@ -5,7 +5,7 @@ import { Static, TSchema, Type } from "@sinclair/typebox"
 import { Value } from "@sinclair/typebox/value"
 import { parseSchema } from "./transform/schema"
 import { ValidationException } from "./validation-exception"
-import { FindOptions, FindQuery } from "src/core/types"
+import { FindOptions, FindFilter } from "../core/types"
 
 
 const cache   : Record<string, Model<TSchema>> = {}
@@ -67,7 +67,7 @@ export class Model<T extends TSchema> extends Collection {
   }
 
   async findAndJoin(
-    filter: FindQuery<Static<T>> = {},
+    filter: FindFilter<Static<T>> = {},
     options: FindOptions = {}
   ) {
     await this.ensure()
@@ -173,7 +173,7 @@ export class Model<T extends TSchema> extends Collection {
   }
 
   async find(
-    search: FindQuery<Static<T>> = {},
+    search: FindFilter<Static<T>> = {},
     options: FindOptions = {}
   ): Promise<Array<Static<T>>> {
     const result = await super.find(search, options)
