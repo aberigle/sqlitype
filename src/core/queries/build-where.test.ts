@@ -68,13 +68,24 @@ describe("queries", () => {
       expect(args[0]).toEqual(1738368000000)
     })
 
-    it("supports less/greater than number", () => {
+    it("supports less/greater than date", () => {
       const { sql, args } = buildWhere({
         field: new Field("date")
       }, { field: { $gt: new Date("2025-02-01") } })
 
       expect(sql).toEqual(`"field::date" > ?`)
       expect(args[0]).toEqual(1738368000000)
+    })
+
+    it("supports multiple less/greater than date", () => {
+      const { sql, args } = buildWhere({
+        field: new Field("date")
+      }, { field: { $gt: new Date("2025-02-01"), $lte : new Date("2026-01-01") } })
+
+
+      expect(sql).toEqual(`"field::date" > ? AND "field::date" <= ?`)
+      expect(args[0]).toEqual(1738368000000)
+      expect(args[1]).toEqual(new Date("2026-01-01").getTime())
     })
 
     it("supports multiple filters", () => {

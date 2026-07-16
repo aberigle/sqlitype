@@ -2,23 +2,30 @@ import { Field } from "../field";
 import { getFieldName } from "../field/serialize";
 
 function getActionFromValue(value: any) {
-  if (value === null) return { action: "IS NULL", value: null }
+  if (value.$lt)  return { action: "<",  value: value.$lt }
+  if (value.$lte) return { action: "<=", value: value.$lte }
+  if (value.$gte) return { action: ">=", value: value.$gte }
+  if (value.$gt)  return { action: ">",  value: value.$gt }
+
+  return { action: "=", value }
+}
+
+function reduceActionsFromValue(value: any) {
+  if (value === null)
+    return [{ action: "IS NULL", value: null }]
 
   if (
     typeof value == 'string' && value.includes("%")
-  ) return { action: "LIKE", value }
+  ) return [{ action: "LIKE", value }]
 
   if (
     typeof value !== 'object' ||
     value?.getTime // Date
-  ) return { action: "=", value }
+  ) return [{ action: "=", value }]
 
-  if (value.$lt)  return { action: "<",  value: value.$lt }
-  if (value.$lte) return { action: "<=", value: value.$lte }
-  if (value.$gte) return { action: ">=", value: value.$gte }
-  if (value.$gt)  return { action : ">", value: value.$gt }
+  return Object.keys(value)
+    .map((key: string) => getActionFromValue({ [key]: value[key] }))
 
-  return { action: "=", value }
 }
 
 export function buildWhere(
@@ -43,11 +50,16 @@ export function buildWhere(
       continue
     }
 
-    const { action, value } = getActionFromValue(filter[name])
+    const actions = reduceActionsFromValue(filter[name])
 
-    if (value !== null) values.push(field.cast(value))
+    for (const { action, value } of actions) {
+      if (value !== null) values.push(field.cast(value))
 
-    conditions.push(`${table ? table + "." : ''}"${getFieldName(name, field)}" ${action} ${value !== null ? '?' : ''}`)
+      conditions.push(`${table ? table + "." : ''}"${getFieldName(name, field)}" ${action} ${value !== null ? '?' : ''}`)
+    }
+
+
+
   }
 
   return {
