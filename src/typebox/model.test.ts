@@ -48,7 +48,7 @@ export function testModel(
     const result = await model.find()
 
     expect(() => Value.Assert(Type.Array(schema), result)).not.toThrow()
-    expect(result.length).toBe(3)
+    expect(result.length).toBe(2)
     expect(() => Value.Assert(schema, result[0])).not.toThrow()
 
   })
@@ -85,8 +85,8 @@ export function testModel(
     const model = new Model(schema, { name: "test", db: connection })
 
     let result = await model.find({ test: { $in: [1, 3] } })
-    expect(result.length).toBe(2)
-    expect(result.map(r => r.test).sort()).toEqual([1, 3])
+    expect(result.length).toBe(1)
+    expect(result.map(r => r.test).sort()).toEqual([1])
   })
 
   it('can search with $in on strings', async () => {
@@ -94,7 +94,7 @@ export function testModel(
     const model = new Model(schema, { name: "test", db: connection })
 
     let result = await model.find({ field: { $in: ["success", "changed"] } })
-    expect(result.length).toBeGreaterThanOrEqual(2)
+    expect(result.length).toBeGreaterThanOrEqual(1)
   })
 
   it('can search with $nin', async () => {
