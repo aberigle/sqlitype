@@ -80,6 +80,32 @@ export function testModel(
 
   })
 
+  it('can search with $in on numbers', async () => {
+    const schema = Type.Object({ test: Type.Number(), id: Type.Number() })
+    const model = new Model(schema, { name: "test", db: connection })
+
+    let result = await model.find({ test: { $in: [1, 3] } })
+    expect(result.length).toBe(2)
+    expect(result.map(r => r.test).sort()).toEqual([1, 3])
+  })
+
+  it('can search with $in on strings', async () => {
+    const schema = Type.Object({ test: Type.Number(), field: Type.String() })
+    const model = new Model(schema, { name: "test", db: connection })
+
+    let result = await model.find({ field: { $in: ["success", "changed"] } })
+    expect(result.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('can search with $nin', async () => {
+    const schema = Type.Object({ test: Type.Number(), id: Type.Number() })
+    const model = new Model(schema, { name: "test", db: connection })
+
+    let result = await model.find({ test: { $nin: [1, 3] } })
+    expect(result.length).toBeGreaterThanOrEqual(1)
+    expect(result.every(r => r.test !== 1 && r.test !== 3)).toBe(true)
+  })
+
   it('can search strings with wildcards', async () => {
     const schema = Type.Object({ test: Type.Number(), field: Type.String() })
     const model = new Model(schema, { name: "test", db: connection })
@@ -255,6 +281,14 @@ export function testModel(
       expect(one.id).toBe(1)
       expect(one.date).toEqual(new Date("2025-02-01"))
 
+    })
+
+    it("filters nested relations with $in", async () => {
+      const [result] = await Two.findAndJoin({ "one": { id: { $in: [1] } } })
+
+      expect(result.one).toBeObject()
+      const oneResult = result.one as Static<typeof OneSchema>
+      expect(oneResult.id).toBe(1)
     })
 
     it("supports relation updates", async () => {

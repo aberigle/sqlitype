@@ -88,11 +88,111 @@ describe("queries", () => {
       expect(args[1]).toEqual(new Date("2026-01-01").getTime())
     })
 
+    it("supports IN array of values", () => {
+      const { sql, args } = buildWhere({
+        field: new Field("number")
+      }, { field: { $in: [1, 2, 3] } })
+
+      expect(sql).toEqual(`"field" IN (?,?,?)`)
+      expect(args.length).toBe(3)
+    })
+
+    it("supports IN array of dates", () => {
+      const { sql, args } = buildWhere({
+        field: new Field("date")
+      }, { field: { $in: [new Date("2025-02-01"), new Date(2)] } })
+
+      expect(sql).toEqual(`"field::date" IN (?,?)`)
+      expect(args.length).toBe(2)
+      expect(args[0]).toBe(1738368000000)
+    })
+
+    it("supports IN with strings", () => {
+      const { sql, args } = buildWhere({
+        field: new Field("string")
+      }, { field: { $in: ["a", "b", "c"] } })
+
+      expect(sql).toEqual(`"field" IN (?,?,?)`)
+      expect(args).toEqual(["a", "b", "c"])
+    })
+
+    it("supports IN with single value", () => {
+      const { sql, args } = buildWhere({
+        field: new Field("number")
+      }, { field: { $in: [42] } })
+
+      expect(sql).toEqual(`"field" IN (?)`)
+      expect(args).toEqual([42])
+    })
+
+    it("supports IN with empty array", () => {
+      const { sql, args } = buildWhere({
+        field: new Field("number")
+      }, { field: { $in: [] } })
+
+      expect(sql).toEqual(`"field" IN ()`)
+      expect(args).toBeEmpty()
+    })
+
+    it("supports IN with booleans", () => {
+      const { sql, args } = buildWhere({
+        field: new Field("boolean")
+      }, { field: { $in: [true, false] } })
+
+      expect(sql).toEqual(`"field::boolean" IN (?,?)`)
+      expect(args).toEqual([1, 0])
+    })
+
+    it("supports NOT IN", () => {
+      const { sql, args } = buildWhere({
+        field: new Field("number")
+      }, { field: { $nin: [1, 2] } })
+
+      expect(sql).toEqual(`"field" NOT IN (?,?)`)
+      expect(args).toEqual([1, 2])
+    })
+
+    it("supports NOT IN with strings", () => {
+      const { sql, args } = buildWhere({
+        field: new Field("string")
+      }, { field: { $nin: ["x", "y"] } })
+
+      expect(sql).toEqual(`"field" NOT IN (?,?)`)
+      expect(args).toEqual(["x", "y"])
+    })
+
+    it("supports null filter", () => {
+      const { sql, args } = buildWhere({
+        field: new Field("string")
+      }, { field: null })
+
+      expect(sql).toEqual(`"field" IS NULL `)
+      expect(args).toBeEmpty()
+    })
+
+    it("supports table prefix", () => {
+      const { sql, args } = buildWhere({
+        field: new Field("number")
+      }, { field: 1 }, "mytable")
+
+      expect(sql).toEqual(`mytable."field" = ?`)
+      expect(args[0]).toEqual(1)
+    })
+
+    it("ignores keys not in fields", () => {
+      const { sql, args } = buildWhere({
+        known: new Field("number")
+      }, { known: 1, unknown: 2 })
+
+      expect(sql).toEqual(`"known" = ?`)
+      expect(args).toEqual([1])
+    })
+
     it("supports multiple filters", () => {
       const { sql, args } = buildWhere({
-        field: new Field("date"),
-        number: new Field("number"),
-        text: new Field("string")
+        field  : new Field("date"),
+        number : new Field("number"),
+        text   : new Field("string")
       }, {
         field: new Date("2025-02-01"),
         number: 2,

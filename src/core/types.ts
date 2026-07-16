@@ -3,6 +3,8 @@ export interface FindOperators<T> {
   $gte? : T;  // greater than equal
   $lt?  : T;  // lower than
   $lte? : T;  // lower than equal
+  $in?  : T[];  // IN (?,?)
+  $nin? : T[];  // NOT IN (?,?)
 }
 
 export type FindQuery<T> = {

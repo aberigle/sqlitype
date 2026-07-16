@@ -1,11 +1,14 @@
+import { ensureArray } from "src/utils/ensure-array";
 import { Field } from "../field";
 import { getFieldName } from "../field/serialize";
 
 function getActionFromValue(value: any) {
-  if (value.$lt)  return { action: "<",  value: value.$lt }
-  if (value.$lte) return { action: "<=", value: value.$lte }
-  if (value.$gte) return { action: ">=", value: value.$gte }
-  if (value.$gt)  return { action: ">",  value: value.$gt }
+  if (value.$lt)   return { action: "<",      value: value.$lt }
+  if (value.$lte)  return { action: "<=",     value: value.$lte }
+  if (value.$gte)  return { action: ">=",     value: value.$gte }
+  if (value.$gt)   return { action: ">",      value: value.$gt }
+  if (value.$in)   return { action: "IN",     value: value.$in }
+  if (value.$nin)  return { action: "NOT IN", value: value.$nin }
 
   return { action: "=", value }
 }
@@ -28,6 +31,24 @@ function reduceActionsFromValue(value: any) {
 
 }
 
+function addValue(
+  field: Field, value: any | null
+) {
+  if (value === null)        return null
+  if (!Array.isArray(value)) return field.cast(value)
+
+  return value.map(current => field.cast(current))
+}
+
+function printPlaceholders(
+  value: string | string[] | null
+) {
+  if (value === null)        return ''
+  if (!Array.isArray(value)) return '?'
+
+  return `(${value.map(_ => '?').join(',')})`
+}
+
 export function buildWhere(
   fields : Record<string, Field>,
   filter : Record<string, any>,
@@ -45,7 +66,11 @@ export function buildWhere(
 
   for (const name of keys) if (fields[name]) {
     const field = fields[name]
-    if (field.type === "id" && field.ref?.table) {
+
+    if (
+      field.type === "id" &&
+      field.ref?.table
+    ) {
       joins[name] = field
       continue
     }
@@ -53,12 +78,16 @@ export function buildWhere(
     const actions = reduceActionsFromValue(filter[name])
 
     for (const { action, value } of actions) {
-      if (value !== null) values.push(field.cast(value))
+      const valuesToAdd = addValue(field, value)
+      values.push(...ensureArray(valuesToAdd).filter(v => v !== null))
 
-      conditions.push(`${table ? table + "." : ''}"${getFieldName(name, field)}" ${action} ${value !== null ? '?' : ''}`)
+      conditions.push(
+        `${table ? table + "." : ''}` +
+        `"${getFieldName(name, field)}"` +
+        ` ${action}` +
+        ` ${printPlaceholders(valuesToAdd)}`
+      )
     }
-
-
 
   }
 
