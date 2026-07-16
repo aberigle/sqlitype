@@ -81,10 +81,10 @@ export function testModel(
   })
 
   it('can search with $in on numbers', async () => {
-    const schema = Type.Object({ test: Type.Number(), id: Type.Number() })
+    const schema = Type.Object({ test: Type.Number(), id: Type.Number(), name: Type.String() })
     const model = new Model(schema, { name: "test", db: connection })
 
-    let result = await model.find({ test: { $in: [1, 3] } })
+    let result = await model.find({ test: { $in: [1, 3] }, name : null })
     expect(result.length).toBe(1)
     expect(result.map(r => r.test).sort()).toEqual([1])
   })

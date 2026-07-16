@@ -7,8 +7,13 @@ export interface FindOperators<T> {
   $nin? : T[];  // NOT IN (?,?)
 }
 
+type Primitive = Date | number | string | boolean | null
+
 export type FindFilter<T> = {
-  [K in keyof T]?: T[K] | FindOperators<T[K]> | null
+  [K in keyof T]?:
+    T[K] extends Primitive
+      ? T[K] | FindOperators<T[K]> | null
+      : FindFilter<T[K]> | FindOperators<T[K]> | null
 }
 
 export type FindOptions = {
