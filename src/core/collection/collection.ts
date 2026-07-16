@@ -1,4 +1,4 @@
-import { isEmpty } from "src/utils/objects"
+import { isEmpty } from "../../utils/objects"
 
 import { Field } from "../field"
 import { deduceFields } from "../field/deduce-field"
