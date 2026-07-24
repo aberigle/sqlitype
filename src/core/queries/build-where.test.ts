@@ -52,6 +52,35 @@ describe("queries", () => {
       expect(args[0]).toEqual("hola%")
     })
 
+    it("supports NOT LIKE via $ne with wildcard", () => {
+      const { sql, args } = buildWhere({
+        text: new Field("string")
+      }, { text: { $ne: "%hola%" } })
+
+      expect(sql).toEqual(`"text" NOT LIKE ?`)
+      expect(args[0]).toEqual("%hola%")
+    })
+
+    it("supports $ne with exact string (no wildcard, regular inequality)", () => {
+      const { sql, args } = buildWhere({
+        text: new Field("string")
+      }, { text: { $ne: "hola" } })
+
+      expect(sql).toEqual(`"text" <> ?`)
+      expect(args[0]).toEqual("hola")
+    })
+
+    it("combines NOT LIKE with other filters", () => {
+      const { sql, args } = buildWhere({
+        name: new Field("string"),
+        age: new Field("number")
+      }, { name: { $ne: "%pepa%" }, age: { $gt: 18 } })
+
+      expect(sql).toEqual(`"name" NOT LIKE ? AND "age" > ?`)
+      expect(args[0]).toEqual("%pepa%")
+      expect(args[1]).toEqual(18)
+    })
+
     it("supports booleans", () => {
       const { sql, args } = buildWhere({
         enabled: new Field("boolean")

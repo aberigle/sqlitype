@@ -3,7 +3,7 @@ import { Field } from "../field";
 import { getFieldName } from "../field/serialize";
 import { FindOperators } from "../types";
 
-function getActionFromValue(value: any) {
+function getActionFromFindOperator(value: any) {
   if (value.$lt)   return { action: "<",  value: value.$lt }
   if (value.$lte)  return { action: "<=", value: value.$lte }
   if (value.$gte)  return { action: ">=", value: value.$gte }
@@ -23,6 +23,10 @@ function getActionFromValue(value: any) {
     target === null
   ) return { action: "IS NOT NULL", value: null }
 
+  if ( // is a wildcard
+    typeof target === "string" && target.includes("%")
+  ) return { action : "NOT LIKE", value : target}
+
   // simple inequality
   return { action: "<>", value: target }
 }
@@ -41,7 +45,7 @@ function reduceActionsFromValue(value: any) {
   ) return [{ action: "=", value }]
 
   return Object.keys(value)
-    .map((key: string) => getActionFromValue({ [key]: value[key] }))
+    .map((key: string) => getActionFromFindOperator({ [key]: value[key] }))
     .filter(item => item !== null)
 }
 
