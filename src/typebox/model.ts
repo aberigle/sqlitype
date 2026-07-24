@@ -1,5 +1,5 @@
 import { Collection, Field } from "../core"
-import { buildWhere } from "../core/queries/build-where"
+import { buildJoinQuery } from "../queries/build-join-query"
 import { isEmpty } from "../utils/objects"
 import { Static, TSchema, Type } from "@sinclair/typebox"
 import { Value } from "@sinclair/typebox/value"
@@ -71,74 +71,15 @@ export class Model<T extends TSchema> extends Collection {
     options: FindOptions = {}
   ) {
     await this.ensure()
-    let select: string[] = [`SELECT ${this.table}.*`]
-    let from: string = `FROM ${this.table} `
-    let where: string[] = []
-    let params: any[] = []
 
     const {
-      sql,
-      args,
-      joins
-    } = buildWhere(this.fields, filter, this.table)
-
-    params.push(...args)
-    where.push(sql)
-
-    async function processJoins(
-      fields: Record<string, Field>,
-      table: string,
-      filter: Record<string, any>,
-      isNested: boolean = false
-    ) {
-      const result: string[] = []
-
-      for (const field of Object.keys(fields)) {
-        if (fields[field].type != "id") continue
-
-        const isRequired = fields[field].required
-
-        const model = fields[field].ref as Model<never>
-        await model.ensure()
-
-        const {
-          sql,
-          args,
-          joins
-        } = buildWhere(model.fields, filter[field], field )
-
-        from += `${isRequired ? 'INNER' : 'LEFT'} JOIN ${model.table} AS ${field} ON ${field}.id = ${table}.${field} `
-
-        if (sql.length) where.push(sql)
-        if (args.length) params.push(...args)
-
-        // handle nested properties
-        const nested: string[] = []
-        if (!isEmpty(joins)) {
-          const prop = await processJoins(
-            joins,
-            model.table,
-            filter[field],
-            true
-          )
-          nested.push(...prop)
-        }
-
-        if (isNested) result.push(...[
-          `'${field}'`,// the field name
-          model.toJSON_OBJECT({ nested, alias: field }) // the field value as json
-        ])
-        else select.push(
-          model.toJSON_OBJECT({ nested, alias: field }) + ` as '${field}' `
-        )
-      }
-
-      return result
-    }
-
-    await processJoins(joins, this.table, filter)
-
-    where = where.filter(q => q)
+      select,
+      from,
+      where,
+      params
+    } = await buildJoinQuery(
+      this.fields, this.table, filter
+    )
 
     let queryOptions = ""
     if (options.order)  queryOptions += ` ORDER BY  ${Object.entries(options.order).map(([key, value]) => `${key} ${value}`).join(",")}`
@@ -146,10 +87,7 @@ export class Model<T extends TSchema> extends Collection {
     if (options.offset) queryOptions += ` OFFSET ${options.offset} `
 
     return this.sql(
-      select.join(", ") +
-      from +
-      (where.length ? `WHERE ${where.join(" AND ")}` : '') +
-      queryOptions,
+      `${select} ${from}${where}${queryOptions}`,
       params
     )
   }
