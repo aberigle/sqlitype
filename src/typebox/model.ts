@@ -105,7 +105,7 @@ export class Model<T extends TSchema> extends Collection {
           sql,
           args,
           joins
-        } = buildWhere(model.fields, filter[field], model.table)
+        } = buildWhere(model.fields, filter[field], field )
 
         from += `${isRequired ? 'INNER' : 'LEFT'} JOIN ${model.table} AS ${field} ON ${field}.id = ${table}.${field} `
 
@@ -141,8 +141,8 @@ export class Model<T extends TSchema> extends Collection {
     where = where.filter(q => q)
 
     let queryOptions = ""
-    if (options.order) queryOptions += ` ORDER BY  ${Object.entries(options.order).map(([key, value]) => `${key} ${value}`).join(",")}`
-    if (options.limit) queryOptions += ` LIMIT ${options.limit} `
+    if (options.order)  queryOptions += ` ORDER BY  ${Object.entries(options.order).map(([key, value]) => `${key} ${value}`).join(",")}`
+    if (options.limit)  queryOptions += ` LIMIT ${options.limit} `
     if (options.offset) queryOptions += ` OFFSET ${options.offset} `
 
     return this.sql(

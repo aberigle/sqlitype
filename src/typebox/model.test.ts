@@ -353,5 +353,28 @@ export function testModel(
       expect(twoUpdated.one.date).toEqual(date)
     })
 
+    it("uses correct join alias when field name differs from table name", async () => {
+      const Ref = Type.Object({
+        id: Type.Number(),
+        name: Type.String()
+      }, { $id: "RefModel" })
+      const refModel = new Model(Ref, { db: connection })
+
+      const Main = Type.Object({
+        id: Type.Number(),
+        alias: ModelReference(refModel)
+      }, { $id: "Main" })
+      const main = new Model(Main, { db: connection })
+
+      const ref1 = await refModel.insert({ name: "keep" })
+      const ref2 = await refModel.insert({ name: "exclude" })
+      await main.insert({ alias: ref1 })
+      await main.insert({ alias: ref2 })
+
+      const results = await main.findAndJoin({ alias: { name: "keep" } })
+      expect(results.length).toBe(1)
+      expect(results[0].alias.name).toBe("keep")
+    })
+
   })
 }

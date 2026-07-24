@@ -92,7 +92,7 @@ function shouldJoinReference<T>(
 export function buildWhere(
   fields : Record<string, Field>,
   filter : Record<string, any>,
-  table  : string = ""
+  alias  : string = ""
 ): {
   sql: string, args: any[], joins: Record<string, Field>
 } {
@@ -121,7 +121,7 @@ export function buildWhere(
       values.push(...ensureArray(valuesToAdd).filter(v => v !== null))
 
       conditions.push(
-        `${table ? table + "." : ''}` +
+        `${alias ? alias + "." : ''}` +
         `"${getFieldName(name, field)}"` +
         ` ${action}` +
         ` ${printPlaceholders(valuesToAdd)}`
