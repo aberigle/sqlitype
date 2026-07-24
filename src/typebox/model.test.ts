@@ -291,6 +291,26 @@ export function testModel(
       expect(oneResult.id).toBe(1)
     })
 
+    it("filters optional ModelReference by null", async () => {
+      const oneInserted = await One.insert({ test: "exists", date: new Date("2025-03-01") })
+      await Two.insert({ field: "withRef", one: oneInserted, another: oneInserted })
+      const target = await Two.insert({ field: "noRef", one: oneInserted })
+
+      const result = await Two.find({ another: null, id : target.id })
+      expect(result.length).toBe(1)
+      expect(result[0].field).toBe("noRef")
+      expect(result[0].another).toBeUndefined()
+    })
+
+
+    it("filters optional ModelReference by null with findAndJoin", async () => {
+      const [result] = await Two.findAndJoin({ another: null, field: "noRef", one: {} })
+
+      expect(result.field).toBe("noRef")
+      expect(result.one.id).toBeNumber()
+      expect(result.another).toBeUndefined()
+    })
+
     it("supports relation updates", async () => {
       const date = new Date()
       const [two] = await Two.findAndJoin({ "one": { id: 1 } })

@@ -3,12 +3,15 @@ import { Field } from "../field";
 import { getFieldName } from "../field/serialize";
 
 function getActionFromValue(value: any) {
-  if (value.$lt)   return { action: "<",      value: value.$lt }
-  if (value.$lte)  return { action: "<=",     value: value.$lte }
-  if (value.$gte)  return { action: ">=",     value: value.$gte }
-  if (value.$gt)   return { action: ">",      value: value.$gt }
-  if (value.$in)   return { action: "IN",     value: value.$in }
-  if (value.$nin)  return { action: "NOT IN", value: value.$nin }
+  if (value.$lt)   return { action: "<",  value: value.$lt }
+  if (value.$lte)  return { action: "<=", value: value.$lte }
+  if (value.$gte)  return { action: ">=", value: value.$gte }
+  if (value.$gt)   return { action: ">",  value: value.$gt }
+
+  // only add if there are items in the list
+  if (value.$in)  return value.$in.length  ? { action : "IN",     value: value.$in }  : null
+  if (value.$nin) return value.$nin.length ? { action : "NOT IN", value: value.$nin } : null
+
 
   return { action: "=", value }
 }
@@ -28,6 +31,7 @@ function reduceActionsFromValue(value: any) {
 
   return Object.keys(value)
     .map((key: string) => getActionFromValue({ [key]: value[key] }))
+    .filter(item => item !== null)
 
 }
 
@@ -69,6 +73,7 @@ export function buildWhere(
 
     if (
       field.type === "id" &&
+      filter[name] !== null && // support for is null on references
       field.ref?.table
     ) {
       joins[name] = field

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "bun:test"
+import { Type } from "@sinclair/typebox"
 
 import { Field } from "../field"
+import { Model } from "../../typebox"
 import { buildWhere } from "./build-where"
 
 
@@ -80,7 +82,7 @@ describe("queries", () => {
     it("supports multiple less/greater than date", () => {
       const { sql, args } = buildWhere({
         field: new Field("date")
-      }, { field: { $gt: new Date("2025-02-01"), $lte : new Date("2026-01-01") } })
+      }, { field: { $gt: new Date("2025-02-01"), $lte: new Date("2026-01-01") } })
 
 
       expect(sql).toEqual(`"field::date" > ? AND "field::date" <= ?`)
@@ -130,7 +132,7 @@ describe("queries", () => {
         field: new Field("number")
       }, { field: { $in: [] } })
 
-      expect(sql).toEqual(`"field" IN ()`)
+      expect(sql).toEqual("")
       expect(args).toBeEmpty()
     })
 
@@ -188,11 +190,39 @@ describe("queries", () => {
       expect(args).toEqual([1])
     })
 
+    it("supports null filter on ref field (IS NULL, no join)", () => {
+      const model = new Model(Type.Object({ id: Type.Number() }), { name: "other" })
+      const field = new Field("id").reference(model)
+
+      const { sql, args, joins } = buildWhere(
+        { reference: field },
+        { reference: null }
+      )
+
+      expect(sql).toEqual(`"reference" IS NULL `)
+      expect(args).toBeEmpty()
+      expect(joins).toEqual({})
+    })
+
+    it("supports non-null filter on ref field (goes to joins)", () => {
+      const model = new Model(Type.Object({ id: Type.Number() }), { name: "other" })
+      const field = new Field("id").reference(model)
+
+      const { sql, args, joins } = buildWhere(
+        { reference: field },
+        { reference: { id: 5 } }
+      )
+
+      expect(sql).toEqual("")
+      expect(args).toBeEmpty()
+      expect(joins).toEqual({ reference: field })
+    })
+
     it("supports multiple filters", () => {
       const { sql, args } = buildWhere({
-        field  : new Field("date"),
-        number : new Field("number"),
-        text   : new Field("string")
+        field: new Field("date"),
+        number: new Field("number"),
+        text: new Field("string")
       }, {
         field: new Date("2025-02-01"),
         number: 2,
