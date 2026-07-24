@@ -1,8 +1,8 @@
 import { describe, expect, it } from "bun:test"
 import { Type } from "@sinclair/typebox"
 
-import { Field } from "../field"
-import { Model } from "../../typebox"
+import { Field } from "../core/field"
+import { Model } from "../typebox"
 import { buildWhere } from "./build-where"
 
 

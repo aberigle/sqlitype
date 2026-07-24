@@ -4,7 +4,7 @@ import { Field } from "../field"
 import { deduceFields } from "../field/deduce-field"
 import { parseFieldListFromDb } from "../field/parse-field"
 import { getFieldDefinition, getFieldName } from "../field/serialize"
-import { buildWhere } from "../queries/build-where"
+import { buildWhere } from "../../queries/build-where"
 import { FindOptions } from "../types"
 
 const ID_FIELD = "id"

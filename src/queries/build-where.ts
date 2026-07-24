@@ -1,7 +1,7 @@
-import { ensureArray } from "../../utils/ensure-array";
-import { Field } from "../field";
-import { getFieldName } from "../field/serialize";
-import { FindOperators } from "../types";
+import { ensureArray } from "../utils/ensure-array";
+import { Field } from "../core/field";
+import { getFieldName } from "../core/field/serialize";
+import { FindOperators } from "../core/types";
 
 function getActionFromFindOperator(value: any) {
   if (value.$lt)   return { action: "<",  value: value.$lt }
