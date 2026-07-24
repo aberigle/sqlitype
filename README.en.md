@@ -249,6 +249,17 @@ const books = await Books.findAndJoin(
 );
 ```
 
+### 🔢 Counting results
+
+```typescript
+const total = await Users.count(); // 5
+
+const adults = await Users.count({ age: { $gt: 18 } }); // 3
+
+// Also works with relations
+const books = await Books.count({ author: { name: "%Gabriel%" } });
+```
+
 ## Supported data types
 
 | TypeBox	| SQLite|	Description |
