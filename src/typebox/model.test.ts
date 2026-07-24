@@ -84,7 +84,7 @@ export function testModel(
     const schema = Type.Object({ test: Type.Number(), id: Type.Number(), name: Type.String() })
     const model = new Model(schema, { name: "test", db: connection })
 
-    let result = await model.find({ test: { $in: [1, 3] }, name : null })
+    let result = await model.find({ test: { $in: [1, 3] }, name: null })
     expect(result.length).toBe(1)
     expect(result.map(r => r.test).sort()).toEqual([1])
   })
@@ -297,7 +297,7 @@ export function testModel(
       const target = await Two.insert({ field: "neNested", one: oneA })
       await Two.insert({ field: "other", one: oneB })
 
-      const [result] = await Two.findAndJoin({ id : target.id, one: { test: { $ne: "exclude" } } })
+      const [result] = await Two.findAndJoin({ id: target.id, one: { test: { $ne: "exclude" } } })
       expect(result.id).toBe(target.id)
       expect(result.one.test).toBe("keep")
     })
@@ -307,7 +307,7 @@ export function testModel(
       await Two.insert({ field: "withRef", one: oneInserted, another: oneInserted })
       const target = await Two.insert({ field: "noRef", one: oneInserted })
 
-      const result = await Two.find({ another: null, id : target.id })
+      const result = await Two.find({ another: null, id: target.id })
       expect(result.length).toBe(1)
       expect(result[0].field).toBe("noRef")
       expect(result[0].another).toBeUndefined()
@@ -374,6 +374,26 @@ export function testModel(
       const results = await main.findAndJoin({ alias: { name: "keep" } })
       expect(results.length).toBe(1)
       expect(results[0].alias.name).toBe("keep")
+    })
+
+    it("counts with simple filter", async () => {
+      const count = await Two.count({ field: "adios" })
+      expect(count).toBe(1)
+    })
+
+    it("counts with join filter", async () => {
+      const count = await Two.count({ one: { test: "references" } })
+      expect(count).toBe(1)
+    })
+
+    it("counts with null filter on optional reference", async () => {
+      const count = await Two.count({ another: null })
+      expect(count).toBe(5)
+    })
+
+    it("counts without filter returns total", async () => {
+      const total = await Two.count()
+      expect(total).toBe(7)
     })
 
   })

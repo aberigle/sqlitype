@@ -92,6 +92,26 @@ export class Model<T extends TSchema> extends Collection {
     )
   }
 
+  async count(
+    filter: FindFilter<Static<T>> = {}
+  ): Promise<number> {
+    await this.ensure()
+
+    const {
+      from,
+      where,
+      params
+    } = await buildJoinQuery(
+      this.fields, this.table, filter
+    )
+
+    const [row] = await this.execute(
+      `SELECT count(*) as count ${from}${where}`,
+      params
+    )
+    return Number(row.count)
+  }
+
   async sql(
     query: string,
     params: Array<any> = []
