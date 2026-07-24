@@ -218,6 +218,37 @@ describe("queries", () => {
       expect(joins).toEqual({ reference: field })
     })
 
+    it("supports $ne filter", () => {
+      const { sql, args } = buildWhere(
+        { field: new Field("number") },
+        { field: { $ne: 5 } }
+      )
+      expect(sql).toEqual(`"field" <> ?`)
+      expect(args).toEqual([5])
+    })
+
+    it("supports $ne null filter", () => {
+      const { sql, args } = buildWhere(
+        { field: new Field("string") },
+        { field: { $ne: null } }
+      )
+      expect(sql).toEqual(`"field" IS NOT NULL `)
+      expect(args).toBeEmpty()
+    })
+
+    it("supports $ne null filter on ref field (IS NOT NULL, no join)", () => {
+      const model = new Model(Type.Object({ id: Type.Number() }), { name: "other" })
+      const field = new Field("id").reference(model)
+
+      const { sql, args, joins } = buildWhere(
+        { reference: field },
+        { reference: { $ne: null } }
+      )
+      expect(sql).toEqual(`"reference" IS NOT NULL `)
+      expect(args).toBeEmpty()
+      expect(joins).toEqual({})
+    })
+
     it("supports multiple filters", () => {
       const { sql, args } = buildWhere({
         field: new Field("date"),

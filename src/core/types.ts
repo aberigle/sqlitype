@@ -1,10 +1,11 @@
 export interface FindOperators<T> {
-  $gt?  : T;  // greater than
-  $gte? : T;  // greater than equal
-  $lt?  : T;  // lower than
-  $lte? : T;  // lower than equal
-  $in?  : T[];  // IN (?,?)
-  $nin? : T[];  // NOT IN (?,?)
+  $gt?  : T;        // >  ?
+  $gte? : T;        // >= ?
+  $lt?  : T;        // <  ?
+  $lte? : T;        // <= ?
+  $in?  : T[];      // IN (?,?)
+  $nin? : T[];      // NOT IN (?,?)
+  $ne?  : T | null; // <> ? | IS NOT NULL
 }
 
 type Primitive = Date | number | string | boolean | null

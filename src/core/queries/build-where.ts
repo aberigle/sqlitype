@@ -1,6 +1,7 @@
 import { ensureArray } from "../../utils/ensure-array";
 import { Field } from "../field";
 import { getFieldName } from "../field/serialize";
+import { FindOperators } from "../types";
 
 function getActionFromValue(value: any) {
   if (value.$lt)   return { action: "<",  value: value.$lt }
@@ -12,8 +13,18 @@ function getActionFromValue(value: any) {
   if (value.$in)  return value.$in.length  ? { action : "IN",     value: value.$in }  : null
   if (value.$nin) return value.$nin.length ? { action : "NOT IN", value: value.$nin } : null
 
+  if ( // there isn't not equal in the value, return simple equality
+    "$ne" in value !== true
+  ) return { action: "=", value }
 
-  return { action: "=", value }
+  // NOT EQUAL
+  const target = value.$ne
+  if ( // target is not equal to null (IS NOT NULL)
+    target === null
+  ) return { action: "IS NOT NULL", value: null }
+
+  // simple inequality
+  return { action: "<>", value: target }
 }
 
 function reduceActionsFromValue(value: any) {
@@ -32,7 +43,6 @@ function reduceActionsFromValue(value: any) {
   return Object.keys(value)
     .map((key: string) => getActionFromValue({ [key]: value[key] }))
     .filter(item => item !== null)
-
 }
 
 function addValue(
@@ -51,6 +61,28 @@ function printPlaceholders(
   if (!Array.isArray(value)) return '?'
 
   return `(${value.map(_ => '?').join(',')})`
+}
+
+function shouldJoinReference<T>(
+  field: Field, value: T | FindOperators<T>
+) {
+  if ( // this is not a reference or it doesn't have table
+    field.type !== "id" ||
+    !field.ref?.table
+  ) return false
+
+  if ( // the value is null we filter without join (IS NULL)
+    value === null
+  ) return false
+
+  if ( // the value is not null the same
+    typeof value === "object" &&
+    "$ne" in value &&
+    value.$ne === null
+  ) return false
+
+  // if not is a join
+  return true
 }
 
 export function buildWhere(
@@ -72,9 +104,7 @@ export function buildWhere(
     const field = fields[name]
 
     if (
-      field.type === "id" &&
-      filter[name] !== null && // support for is null on references
-      field.ref?.table
+      shouldJoinReference(field, filter[name])
     ) {
       joins[name] = field
       continue
@@ -97,8 +127,8 @@ export function buildWhere(
   }
 
   return {
-    sql: `${conditions.join(" AND ")}`,
-    args: values,
+    sql  : `${conditions.join(" AND ")}`,
+    args : values,
     joins
   }
 }

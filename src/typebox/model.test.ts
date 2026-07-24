@@ -291,6 +291,17 @@ export function testModel(
       expect(oneResult.id).toBe(1)
     })
 
+    it("filters nested relations by $ne on non-id field", async () => {
+      const oneA = await One.insert({ test: "keep", date: new Date("2025-01-01") })
+      const oneB = await One.insert({ test: "exclude", date: new Date("2025-06-15") })
+      const target = await Two.insert({ field: "neNested", one: oneA })
+      await Two.insert({ field: "other", one: oneB })
+
+      const [result] = await Two.findAndJoin({ id : target.id, one: { test: { $ne: "exclude" } } })
+      expect(result.id).toBe(target.id)
+      expect(result.one.test).toBe("keep")
+    })
+
     it("filters optional ModelReference by null", async () => {
       const oneInserted = await One.insert({ test: "exists", date: new Date("2025-03-01") })
       await Two.insert({ field: "withRef", one: oneInserted, another: oneInserted })
@@ -309,6 +320,23 @@ export function testModel(
       expect(result.field).toBe("noRef")
       expect(result.one.id).toBeNumber()
       expect(result.another).toBeUndefined()
+    })
+
+    it("filters optional ModelReference by $ne: null", async () => {
+      const oneInserted = await One.insert({ test: "exists", date: new Date() })
+      const target = await Two.insert({ field: "hasAnother", one: oneInserted, another: oneInserted })
+      await Two.insert({ field: "noRef", one: oneInserted })
+
+      const result = await Two.find({ another: { $ne: null }, id: target.id })
+      expect(result.length).toBe(1)
+      expect(result[0].another).not.toBeUndefined()
+      expect(result[0].another?.id).toBe(oneInserted.id)
+    })
+
+    it("filters optional ModelReference by $ne: null with findAndJoin", async () => {
+      const [result] = await Two.findAndJoin({ another: { $ne: null }, field: "hasAnother", one: {} })
+      expect(result.another).not.toBeUndefined()
+      expect(result.another?.id).toBeNumber()
     })
 
     it("supports relation updates", async () => {
