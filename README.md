@@ -43,9 +43,18 @@ type User = Static<typeof User>;
 const Users = new sqlitype.Model(User);
 
 sqlitype.useConnection(new Database('mydb.sqlite'));
+
+// También puedes usar fromTypebox
+const Users = sqlitype.fromTypebox(UserSchema);
 ```
 
 sqlitype se encarga de crear o actualizar la tabla para mantenerla sincronizada con el esquema. (dentro de lo que SQLite permite)
+
+Puedes cambiar la conexión en cualquier momento con `useClient`:
+```typescript
+sqlitype.useClient(new Database('otra.db'));
+// Todos los modelos existentes usarán la nueva conexión
+```
 
 ### 📀 Insertar datos
 
@@ -61,6 +70,16 @@ const newUser = await Users.insert({
 });
 
 console.log(newUser.id); // ID auto-generado
+```
+
+Si los datos no pasan la validación se lanza un error:
+```typescript
+try {
+  await Users.insert({ name: "Pepe", email: 123 }); // Error! email debe ser string
+} catch (e) {
+  console.log(e.message); // "Validation error"
+  console.log(e.errors);  // Array de ValueError de TypeBox
+}
 ```
 
 ### 🔍 Buscar datos
@@ -92,6 +111,35 @@ const jovenes = await Users.find({
 const user = await Users.findById(1);
 ```
 
+Operadores disponibles para los filtros:
+
+| Operador | Ejemplo | SQL |
+|-|-|-|
+| (valor directo) | `{ age: 28 }` | `"age" = ?` |
+| `$gt` | `{ age: { $gt: 18 } }` | `"age" > ?` |
+| `$gte` | `{ age: { $gte: 18 } }` | `"age" >= ?` |
+| `$lt` | `{ age: { $lt: 18 } }` | `"age" < ?` |
+| `$lte` | `{ age: { $lte: 18 } }` | `"age" <= ?` |
+| `$in` | `{ age: { $in: [18, 21] } }` | `"age" IN (?,?)` |
+| `$nin` | `{ age: { $nin: [18] } }` | `"age" NOT IN (?)` |
+| `%` wildcard | `{ name: "%Ana%" }` | `"name" LIKE ?` |
+| `$ne` + `%` | `{ name: { $ne: "%Ana%" } }` | `"name" NOT LIKE ?` |
+| `$ne` | `{ name: { $ne: "Pepa" } }` | `"name" <> ?` |
+| `$ne: null` | `{ name: { $ne: null } }` | `"name" IS NOT NULL` |
+| `null` | `{ name: null }` | `"name" IS NULL` |
+
+Y puedes ordenar, limitar y paginar con `FindOptions`:
+```typescript
+const resultados = await Users.find(
+  { age: { $gt: 18 } },
+  {
+    order: { name: "asc" },
+    limit: 10,
+    offset: 20
+  }
+);
+```
+
 ### 📝 Actualizar datos
 ```typescript
 const updated = await Users.update(1, {
@@ -102,6 +150,26 @@ const updated = await Users.update(1, {
 ### 🫂 Relaciones entre modelos
 
 Se pueden definir relaciones con otro modelo utilizando `ModelReference`
+
+Las relaciones pueden ser obligatorias u opcionales:
+
+```typescript
+const Book = Type.Object({
+  id: Type.Number(),
+  title: Type.String(),
+  author: sqlitype.ModelReference(Authors),          // ⬅️ Obligatoria
+  editor: Type.Optional(sqlitype.ModelReference(Authors)) // ⬅️ Opcional
+}, { $id : "Book" })
+```
+
+Para las opcionales puedes filtrar por si tienen o no referencia:
+```typescript
+// Libros sin editor
+const sinEditor = await Books.find({ editor: null })
+
+// Libros con editor
+const conEditor = await Books.find({ editor: { $ne: null } })
+```
 
 ```typescript
 // Modelo Autor
@@ -147,6 +215,41 @@ const books = await Books.findAndJoin({
     name : "%Gabriel%"
   }
 }); // todos los libros con soledad en el titulo escritos por alguien que se llame Gabriel 😳
+```
+
+También puedes combinar operadores en los campos anidados:
+```typescript
+// Libros cuyo autor NO se llame Gabriel, o libros sin autor
+const libros = await Books.findAndJoin({
+  author: {
+    name: { $ne: "%Gabriel%" } // NOT LIKE
+  }
+});
+
+// Libros de varios autores específicos
+const libros = await Books.findAndJoin({
+  author: {
+    id: { $in: [1, 2, 3] }
+  }
+});
+```
+
+Con relaciones opcionales puedes popular aunque no tengan referencia:
+```typescript
+// Popula el author, aunque el editor sea null
+const [book] = await Books.findAndJoin({
+  editor: null,
+  author: {}
+});
+// book.author está populado, book.editor es undefined
+```
+
+También soporta `FindOptions`:
+```typescript
+const libros = await Books.findAndJoin(
+  { author: { name: "%Gabriel%" } },
+  { order: { title: "asc" }, limit: 5 }
+);
 ```
 
 ## Tipos de Datos Soportados
