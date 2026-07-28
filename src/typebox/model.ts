@@ -82,7 +82,7 @@ export class Model<T extends TSchema> extends Collection {
       this.fields, this.table, filter
     )
 
-    let queryOptions = buildOrderClause(options.order || {})
+    let queryOptions = buildOrderClause(options.order || {}, this.fields)
     if (options.limit) queryOptions += ` LIMIT ${options.limit} `
     if (options.offset) queryOptions += ` OFFSET ${options.offset} `
 

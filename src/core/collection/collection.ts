@@ -106,7 +106,7 @@ export default class Collection {
 
     if (sql.length) query += `WHERE ${sql} `
 
-    query += buildOrderClause(options.order || {})
+    query += buildOrderClause(options.order || {}, fields)
     if (options.limit) query += ` LIMIT ${options.limit} `
     if (options.offset) query += ` OFFSET ${options.offset} `
 
