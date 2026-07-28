@@ -17,8 +17,17 @@ export type FindFilter<T> = {
       : FindFilter<T[K]> | FindOperators<T[K]> | null
 }
 
-export type FindOptions = {
-  order?  : Record<string, "asc" | "desc">,
+type FlattenObjectKeys<T> = {
+  [K in keyof T & string]:
+    [T[K]] extends [Date | number | string | boolean | null | undefined | any[]]
+      ? K
+      : [Exclude<T[K], undefined | null>] extends [object]
+        ? K | `${K}.${FlattenObjectKeys<NonNullable<T[K]>>}`
+        : K
+}[keyof T & string]
+
+export type FindOptions<T = Record<string, any>> = {
+  order?  : Partial<Record<FlattenObjectKeys<T>, "asc" | "desc">>,
   limit?  : number,
   offset? : number
 }
