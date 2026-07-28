@@ -124,7 +124,10 @@ Available operators:
 | `$ne: null` | `{ name: { $ne: null } }` | `"name" IS NOT NULL` |
 | `null` | `{ name: null }` | `"name" IS NULL` |
 
-You can also sort, limit, and paginate with `FindOptions`:
+### 📊 Sorting, limiting, and paginating
+
+All `find` and `findAndJoin` methods accept `FindOptions` as a second parameter:
+
 ```typescript
 const results = await Users.find(
   { age: { $gt: 18 } },
@@ -135,6 +138,20 @@ const results = await Users.find(
   }
 );
 ```
+
+The `order` supports nested paths for sorting by related fields:
+
+```typescript
+const books = await Books.findAndJoin(
+  {},
+  {
+    order: { title: "asc", "author.name": "desc" },
+    limit: 5
+  }
+);
+```
+
+TypeScript autocompletes valid paths based on the model schema.
 
 ### 📝 Updating Data
 ```typescript
@@ -241,11 +258,12 @@ const [book] = await Books.findAndJoin({
 // book.author is populated, book.editor is undefined
 ```
 
-It also supports `FindOptions`:
+With `FindOptions` you can sort by nested fields with type safety:
+
 ```typescript
 const books = await Books.findAndJoin(
   { author: { name: "%Gabriel%" } },
-  { order: { title: "asc" }, limit: 5 }
+  { order: { title: "asc", "author.name": "desc" }, limit: 5 }
 );
 ```
 

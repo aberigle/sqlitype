@@ -128,7 +128,10 @@ Operadores disponibles para los filtros:
 | `$ne: null` | `{ name: { $ne: null } }` | `"name" IS NOT NULL` |
 | `null` | `{ name: null }` | `"name" IS NULL` |
 
-Y puedes ordenar, limitar y paginar con `FindOptions`:
+### 📊 Ordenar, limitar y paginar
+
+Todos los métodos `find` y `findAndJoin` aceptan `FindOptions` como segundo parámetro:
+
 ```typescript
 const resultados = await Users.find(
   { age: { $gt: 18 } },
@@ -139,6 +142,20 @@ const resultados = await Users.find(
   }
 );
 ```
+
+El `order` soporta paths anidados para ordenar por campos de relaciones:
+
+```typescript
+const libros = await Books.findAndJoin(
+  {},
+  {
+    order: { title: "asc", "author.name": "desc" },
+    limit: 5
+  }
+);
+```
+
+TypeScript autocompleta los paths válidos según el esquema del modelo.
 
 ### 📝 Actualizar datos
 ```typescript
@@ -244,11 +261,12 @@ const [book] = await Books.findAndJoin({
 // book.author está populado, book.editor es undefined
 ```
 
-También soporta `FindOptions`:
+Y con `FindOptions` puedes ordenar por campos anidados con type-safe:
+
 ```typescript
 const libros = await Books.findAndJoin(
   { author: { name: "%Gabriel%" } },
-  { order: { title: "asc" }, limit: 5 }
+  { order: { title: "asc", "author.name": "desc" }, limit: 5 }
 );
 ```
 
