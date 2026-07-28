@@ -5,6 +5,7 @@ import { deduceFields } from "../field/deduce-field"
 import { parseFieldListFromDb } from "../field/parse-field"
 import { getFieldDefinition, getFieldName } from "../field/serialize"
 import { buildWhere } from "../../queries/build-where"
+import { buildOrderClause } from "../../queries/build-order"
 import { FindOptions } from "../types"
 
 const ID_FIELD = "id"
@@ -105,7 +106,7 @@ export default class Collection {
 
     if (sql.length) query += `WHERE ${sql} `
 
-    if (options.order) query += ` ORDER BY  ${Object.entries(options.order).map((key, value) => `${key} ${value}`).join(",")}`
+    query += buildOrderClause(options.order || {})
     if (options.limit) query += ` LIMIT ${options.limit} `
     if (options.offset) query += ` OFFSET ${options.offset} `
 

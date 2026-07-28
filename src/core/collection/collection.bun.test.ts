@@ -109,5 +109,32 @@ export function testCollection(
     expect(result.length).toBe(1)
   })
 
+  // order integration tests
+
+  it('can order ascending', async () => {
+    await col.insert({ test: 10 })
+    await col.insert({ test: 20 })
+    const result = await col.find({ test: { $in: [10, 20] } }, { order: { test: "asc" } })
+    expect(result[0].test).toBe(10)
+    expect(result[1].test).toBe(20)
+  })
+
+  it('can order descending', async () => {
+    const result = await col.find({ test: { $in: [10, 20] } }, { order: { test: "desc" } })
+    expect(result[0].test).toBe(20)
+    expect(result[1].test).toBe(10)
+  })
+
+  it('can order with limit', async () => {
+    const result = await col.find({ test: { $in: [10, 20] } }, { order: { test: "desc" }, limit: 1 })
+    expect(result.length).toBe(1)
+    expect(result[0].test).toBe(20)
+  })
+
+  it('can order with offset', async () => {
+    const result = await col.find({}, { order: { test: "asc" }, offset: 1, limit: 1 })
+    expect(result.length).toBe(1)
+  })
+
 
 }

@@ -1,5 +1,6 @@
 import { Collection, Field } from "../core"
 import { buildJoinQuery } from "../queries/build-join-query"
+import { buildOrderClause } from "../queries/build-order"
 import { isEmpty } from "../utils/objects"
 import { Static, TSchema, Type } from "@sinclair/typebox"
 import { Value } from "@sinclair/typebox/value"
@@ -67,8 +68,8 @@ export class Model<T extends TSchema> extends Collection {
   }
 
   async findAndJoin(
-    filter: FindFilter<Static<T>> = {},
-    options: FindOptions = {}
+    filter  : FindFilter<Static<T>>  = {},
+    options : FindOptions<Static<T>> = {}
   ) {
     await this.ensure()
 
@@ -81,9 +82,8 @@ export class Model<T extends TSchema> extends Collection {
       this.fields, this.table, filter
     )
 
-    let queryOptions = ""
-    if (options.order)  queryOptions += ` ORDER BY  ${Object.entries(options.order).map(([key, value]) => `${key} ${value}`).join(",")}`
-    if (options.limit)  queryOptions += ` LIMIT ${options.limit} `
+    let queryOptions = buildOrderClause(options.order || {})
+    if (options.limit) queryOptions += ` LIMIT ${options.limit} `
     if (options.offset) queryOptions += ` OFFSET ${options.offset} `
 
     return this.sql(
@@ -132,7 +132,7 @@ export class Model<T extends TSchema> extends Collection {
 
   async find(
     search: FindFilter<Static<T>> = {},
-    options: FindOptions = {}
+    options: FindOptions<Static<T>> = {}
   ): Promise<Array<Static<T>>> {
     const result = await super.find(search, options)
     return result.map(item => this.cast(item))

@@ -396,5 +396,86 @@ export function testModel(
       expect(total).toBe(7)
     })
 
+    it("can order findAndJoin by top-level field ascending", async () => {
+      const ref = await One.insert({ test: "ref", date: new Date("2025-01-01") })
+      await Two.insert({ field: "aaa", one: ref })
+      await Two.insert({ field: "bbb", one: ref })
+      const result = await Two.findAndJoin({ field: { $in: ["aaa", "bbb"] } }, {
+        order: {
+          field: "asc"
+        }
+      })
+      expect(result[0].field).toBe("aaa")
+      expect(result[1].field).toBe("bbb")
+    })
+
+    it("can order findAndJoin by top-level field descending", async () => {
+      const result = await Two.findAndJoin({ field: { $in: ["aaa", "bbb"] } }, { order: { field: "desc" } })
+      expect(result[0].field).toBe("bbb")
+      expect(result[1].field).toBe("aaa")
+    })
+
+    it("can order findAndJoin by related string field", async () => {
+      const refA   = await One.insert({ test: "alpha", date: new Date("2025-01-01") })
+      const refB   = await One.insert({ test: "beta", date: new Date("2025-06-15") })
+      const oneRef = await One.insert({ test: "gamma", date: new Date("2025-03-01") })
+
+      await Two.insert({ field: "x", one: refA })
+      await Two.insert({ field: "y", one: refB })
+      await Two.insert({ field: "z", one: oneRef })
+      const result = await Two.findAndJoin(
+        { one: { test: { $in: ["alpha", "beta", "gamma"] } } },
+        { order: { "one.test" : "asc" } }
+      )
+      expect(result[0].one.test).toBe("alpha")
+      expect(result[1].one.test).toBe("beta")
+      expect(result[2].one.test).toBe("gamma")
+    })
+
   })
+
+  // Model.find order integration tests
+
+  it("can order Model.find ascending", async () => {
+    const schema = Type.Object({ test: Type.Number() })
+    const model = new Model(schema, { name: "test", db: connection })
+
+    await model.insert({ test: 100 })
+    await model.insert({ test: 200 })
+
+    const result = await model.find(
+      { test: { $in: [100, 200] } },
+      { order: { test: "asc" } }
+    )
+    expect(result[0].test).toBe(100)
+    expect(result[1].test).toBe(200)
+  })
+
+  it("can order Model.find descending", async () => {
+    const schema = Type.Object({ test: Type.Number() })
+    const model = new Model(schema, { name: "test", db: connection })
+
+    const result = await model.find(
+      { test: { $in: [100, 200] } },
+      { order: { test: "desc" } }
+    )
+    expect(result[0].test).toBe(200)
+    expect(result[1].test).toBe(100)
+  })
+
+  it("can use order with limit on Model.find", async () => {
+    const schema = Type.Object({ test: Type.Number() })
+    const model = new Model(schema, { name: "test", db: connection })
+
+    await model.insert({ test: 300 })
+    await model.insert({ test: 400 })
+
+    const result = await model.find(
+      { test: { $in: [300, 400] } },
+      { order: { test: "asc" }, limit: 1 }
+    )
+    expect(result.length).toBe(1)
+    expect(result[0].test).toBe(300)
+  })
+
 }
