@@ -84,6 +84,11 @@ export function testCollection(
     expect(result.test).toBe(3)
   })
 
+  it('handles empty updates', async () => {
+    const result = await col.update(3, {})
+    expect(result.test).toBe(3)
+  })
+
   it('returns object on insert', async () => {
     let result = await col.insert({ text: "insert test" })
     expect(result.text).toBe("insert test")

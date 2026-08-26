@@ -152,7 +152,9 @@ export default class Collection {
     id: any,
     model = {}
   ) {
-    let clone = Object.assign({}, model)
+    if (isEmpty(model)) return this.findById(id)
+
+    let clone  = Object.assign({}, model)
     let fields = await this.ensure(deduceFields(clone))
 
     const values: Array<any> = []
