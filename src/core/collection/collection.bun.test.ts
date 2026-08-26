@@ -89,6 +89,11 @@ export function testCollection(
     expect(result.test).toBe(3)
   })
 
+  it('handles updates on missing rows', async () => {
+    const result = await col.update(9999, { test: 42 })
+    expect(result).toBeUndefined()
+  })
+
   it('returns object on insert', async () => {
     let result = await col.insert({ text: "insert test" })
     expect(result.text).toBe("insert test")

@@ -85,7 +85,9 @@ export default class Collection {
     }
   }
 
-  transform(item) {
+  transform(item : any)  {
+    if (!item) return undefined
+
     return Object.entries(this.fields)
       .reduce((result, [name, field]) => {
         result[name] = field.parse(result[getFieldName(name, field)])
@@ -144,8 +146,8 @@ export default class Collection {
 
     if (isNaN(query)) return
 
-    let result = await this.find({ [ID_FIELD]: query })
-    return result[0]
+    let [result] = await this.find({ [ID_FIELD]: query })
+    return result
   }
 
   async update(
@@ -172,9 +174,9 @@ export default class Collection {
     query += ` WHERE ${ID_FIELD} = ${id} `
     query += `RETURNING *`
 
-    const result = await this.execute(query, values)
+    const [result] = await this.execute(query, values)
 
-    return this.transform(result[0])
+    return this.transform(result)
   }
 
   async ensure(
