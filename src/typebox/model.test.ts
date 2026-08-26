@@ -200,6 +200,14 @@ export function testModel(
     expect(result.test).toBe(value)
   })
 
+  it('handles updates on missing rows', async () => {
+    const schema = Type.Object({ test: Type.Number(), id: Type.Number() })
+    const model = new Model(schema, { name: "test", db: connection })
+
+    const result = await model.update(9999, { test: 42 })
+    expect(result).toBeUndefined()
+  })
+
   it('supports booleans', async () => {
     const schema = Type.Object({
       optional: Type.Optional(Type.Boolean()),

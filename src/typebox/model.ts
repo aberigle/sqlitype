@@ -64,6 +64,8 @@ export class Model<T extends TSchema> extends Collection {
   }
 
   cast(value: any): Static<T> {
+    if (!value) return value
+
     return Value.Clean(this.schema, Value.Convert(this.schema, { ...value }))
   }
 
