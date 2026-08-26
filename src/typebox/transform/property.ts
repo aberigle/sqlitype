@@ -1,26 +1,33 @@
 import { TObject, TSchema, TUnion } from "@sinclair/typebox";
-import { Model } from "../model";
 import { Field } from "../../core";
+import { Model } from "../model";
 
 const Kind = Symbol.for("TypeBox.Kind")
 const Optional = Symbol.for("TypeBox.Optional")
 
 function parseUnionProperty(
-  field : TUnion,
-  references : Model<TSchema>[] = []
+  field      : TUnion,
+  references : Model<TSchema>[] = [],
+  options    : { required: boolean }
 ) : Field {
 
   if (field.anyOf.length < 1) throw new Error("Empty Union is not supported")
 
   // add support for dates as string or number
   const date: TSchema | undefined = field.anyOf.find(({ type }) => type == "Date")
-  if (date !== undefined) return parseProperty(date)
+  if (date !== undefined) return parseProperty(date, references, options)
 
   // look for anything other than a literal
-  const notLiteral: TSchema | undefined = field.anyOf
+  const hasAnyNotLiteral: TSchema | undefined = field.anyOf
   .find((unionField) => Kind in unionField && unionField[Kind] !== "Literal")
+
   // all elements are Literal
-  if (!notLiteral) return parseProperty(field.anyOf[0])
+  if (!hasAnyNotLiteral)
+    return parseProperty(
+      field.anyOf[0],
+      references,
+      options
+    )
 
   throw new Error("Type not supported: Union")
 }
@@ -32,7 +39,7 @@ export function parseObjectProperty(
 ): Field {
   if (!field.$id?.includes("ref")) return new Field("object", options.required)
 
-  const name = field.$id.split("@").pop()
+  const name  = field.$id.split("@").pop()
   const model = references.find(({ schema: { $id } }) => $id == name)
   if (model) return new Field("id", options.required).reference(model)
 
@@ -40,29 +47,40 @@ export function parseObjectProperty(
 }
 
 export function parseProperty(
-  field : TSchema,
-  references: Model<TSchema>[] = []
+  field      : TSchema,
+  references : Model<TSchema>[] = [],
+  options?   : { required: boolean }
 ) : Field {
 
-  let options = {
+  options ||= {
     required: !(Optional in field)
   }
 
   switch (field.type) {
-    case 'string': return new Field("string", options.required)
+    case 'string'  : return new Field("string", options.required)
     case 'number'  :
-    case 'integer' : return new Field("number", options.required)
+    case 'integer' : return new Field("number",  options.required)
     case 'boolean' : return new Field("boolean", options.required)
-    case 'Date'    : return new Field("date", options.required)
-    case 'object'  : return parseObjectProperty(<TObject>field, references, options)
+    case 'Date'    : return new Field("date",    options.required)
     case 'array'   : return new Field("array", options.required)
+    case 'object'  :
+      return parseObjectProperty(
+        field as TObject,
+        references,
+        options
+      )
+
   }
 
   const symbol = Kind in field ? field[Kind] : ''
 
   switch(symbol) {
     case 'Any'   : return new Field("object", options.required)
-    case 'Union' : return parseUnionProperty(<TUnion>field, references)
+    case 'Union' : return parseUnionProperty(
+      field as TUnion,
+      references,
+      options
+    )
   }
 
   throw new Error("Type not supported: " + (field.type || symbol))

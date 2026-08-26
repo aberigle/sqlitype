@@ -47,7 +47,7 @@ describe('typebox properties',() => {
       expect(field.required).toBe(false)
     })
 
-    it("Type.Union for dates", () => {
+    it("Type.Union for dates (date, isostring or timestamp, but a date)", () => {
       const field = parseProperty(Type.Union([Type.Date(), Type.String(), Type.Number()]))
       expect(field.type).toBe("date")
     })
@@ -62,6 +62,21 @@ describe('typebox properties',() => {
       const field = parseProperty(ModelReference(ref), [ref])
 
       expect(field.type).toBe("id")
+    })
+
+    it("Type.Optional(Union) for literals", () => {
+      const field = parseProperty(
+        Type.Optional(Type.Union([Type.Literal("one"), Type.Literal("two")]))
+      )
+      expect(field.type).toBe("string")
+      expect(field.required).toBe(false)
+    })
+
+    it("Type.Optional(Union) for dates", () => {
+      const field = parseProperty(
+        Type.Optional(Type.Union([Type.Date(), Type.String(), Type.Number()]))
+      )
+      expect(field.required).toBe(false)
     })
   })
 

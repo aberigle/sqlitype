@@ -235,6 +235,31 @@ export function testModel(
   })
 
 
+  it('supports optional unions', async () => {
+    const schema = Type.Object({
+      status: Type.Optional(Type.Union([Type.Literal("one"), Type.Literal("two")])),
+      test: Type.Number(),
+      id: Type.Number()
+    })
+    const model = new Model(schema, { name: "test", db: connection })
+
+    const inserted = await model.insert({ test: 5 })
+    expect(() => Value.Assert(schema, inserted)).not.toThrow()
+    expect(inserted.status).toBeUndefined()
+
+    const found = await model.findById(inserted.id)
+    expect(() => Value.Assert(schema, found)).not.toThrow()
+    expect(found.status).toBeUndefined()
+
+    const foundWithValue = await model.insert({ test: 6, status: "one" })
+    expect(() => Value.Assert(schema, foundWithValue)).not.toThrow()
+    expect(foundWithValue.status).toBe("one")
+
+    const searched = await model.findById(foundWithValue.id)
+    expect(() => Value.Assert(schema, searched)).not.toThrow()
+    expect(searched.status).toBe("one")
+  })
+
   describe("relations", () => {
     const OneSchema = Type.Object({
       id: Type.Number(),
