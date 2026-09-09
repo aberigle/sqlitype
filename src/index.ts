@@ -1,4 +1,4 @@
-import { Collection, Field, connection, resolveConnection, connectionByName } from "./core"
+import { Collection, Field, connection, resolveConnection, connectionByName, setDefaultConnection } from "./core"
 import { fromTypebox, Model, ModelReference, ConnectionModel } from "./typebox"
 
 export type { FindFilter } from "./core/types"
@@ -16,7 +16,7 @@ export const sqlitype = {
     Collection,
     Field
   },
-  useClient: (client) => Model.reload(client)
+  useClient: (client) => setDefaultConnection(client)
 }
 
 export default sqlitype
