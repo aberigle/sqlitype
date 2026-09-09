@@ -27,11 +27,6 @@ export default class Collection {
     this.fields = {}
   }
 
-  setDb(db: SqliteDriver) {
-    this.connection = connection(db)
-    this.fields = {}
-  }
-
   toJSON_OBJECT({
     alias = this.table,
     nested = []

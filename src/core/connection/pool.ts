@@ -1,7 +1,7 @@
 import { Connection } from "./connection"
-import { SqliteDriver } from "./types"
+import { type SqliteDriver } from "./types"
 
-const byDb     = new WeakMap<object, Connection>()
+let byDb       = new WeakMap<object, Connection>()
 const byName   = new Map<string, Connection>()
 let defaultConn: Connection | undefined
 let resolver   : ((key: string) => Connection) | undefined
@@ -75,6 +75,7 @@ export function getDefaultConnection(): Connection | undefined {
 }
 
 export function resetPool(): void {
+  byDb = new WeakMap()
   byName.clear()
   defaultConn = undefined
   resolver = undefined

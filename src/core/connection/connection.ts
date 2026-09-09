@@ -1,12 +1,13 @@
 import type { TSchema } from "@sinclair/typebox"
 import type { Model } from "../../typebox/model"
 import { ConnectionModel } from "../../typebox/connection-model"
-import { SqliteDriver } from "./types"
+import { type SqliteDriver } from "./types"
 
 export class Connection {
   db     : SqliteDriver
   name?  : string
   models : Map<string, ConnectionModel<any>>
+  schemas: TSchema[]
 
   constructor(
     db    : SqliteDriver,
@@ -15,12 +16,13 @@ export class Connection {
     this.db     = db
     this.name   = name
     this.models = new Map()
+    this.schemas = []
   }
 
   model<T extends TSchema>(
     definition: Model<T>
   ): ConnectionModel<T> {
-    const key      = definition.name
+    const key      = definition.table
     const existing = this.models.get(key) as ConnectionModel<T> | undefined
 
     if (existing)
@@ -28,6 +30,7 @@ export class Connection {
 
     const bound = new ConnectionModel<T>(this, definition)
     this.models.set(key, bound)
+    this.schemas.push(bound.schema)
     return bound
   }
 
