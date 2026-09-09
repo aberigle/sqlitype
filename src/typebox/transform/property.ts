@@ -1,13 +1,15 @@
 import { TObject, TSchema, TUnion } from "@sinclair/typebox";
 import { Field } from "../../core";
-import { Model } from "../model";
+import type { RefModel } from "../../core";
 
-const Kind = Symbol.for("TypeBox.Kind")
+const Kind     = Symbol.for("TypeBox.Kind")
 const Optional = Symbol.for("TypeBox.Optional")
+
+export type RefSchema = RefModel & { schema: TSchema }
 
 function parseUnionProperty(
   field      : TUnion,
-  references : Model<TSchema>[] = [],
+  references : RefSchema[] = [],
   options    : { required: boolean }
 ) : Field {
 
@@ -34,7 +36,7 @@ function parseUnionProperty(
 
 export function parseObjectProperty(
   field      : TObject,
-  references : Model<TSchema>[] = [],
+  references : RefSchema[] = [],
   options: { required: boolean }
 ): Field {
   if (!field.$id?.includes("ref")) return new Field("object", options.required)
@@ -48,7 +50,7 @@ export function parseObjectProperty(
 
 export function parseProperty(
   field      : TSchema,
-  references : Model<TSchema>[] = [],
+  references : RefSchema[] = [],
   options?   : { required: boolean }
 ) : Field {
 
