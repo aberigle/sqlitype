@@ -1,9 +1,18 @@
+export { Connection } from "./connection"
+export type {
+  SqliteDriver,
+  SqliteQueryDriver,
+  SqliteExecuteDriver,
+  SqlExecuteResult,
+  QueryStatement,
+  ExecuteStatement
+} from "./types"
 export {
-  Connection,
   connection,
   connectionByName,
   resolveConnection,
   resolveConnectionKey,
   setDefaultConnection,
   getDefaultConnection,
-} from "./connection";
+  resetPool,
+} from "./pool"

@@ -1,31 +1,34 @@
 import { isEmpty } from "../../utils/objects"
 
+import { buildOrderClause } from "../../queries/build-order"
+import { buildWhere } from "../../queries/build-where"
+import { connection, resolveConnection } from "../connection"
+import { Connection } from "../connection/connection"
+import type { SqliteDriver } from "../connection/types"
 import { Field } from "../field"
 import { deduceFields } from "../field/deduce-field"
 import { parseFieldListFromDb } from "../field/parse-field"
 import { getFieldDefinition, getFieldName } from "../field/serialize"
-import { buildWhere } from "../../queries/build-where"
-import { buildOrderClause } from "../../queries/build-order"
 import { FindOptions } from "../types"
 
 const ID_FIELD = "id"
 
 export default class Collection {
-  db: any
-  table: string
-  fields: Record<string, Field>
+  connection : Connection
+  table      : string
+  fields     : Record<string, Field>
 
   constructor(
-    db: any,
-    name: string
+    db   : SqliteDriver,
+    name : string
   ) {
-    this.db = db
+    this.connection = connection(db)
     this.table = name
     this.fields = {}
   }
 
-  setDb(db) {
-    this.db = db
+  setDb(db: SqliteDriver) {
+    this.connection = connection(db)
     this.fields = {}
   }
 
@@ -53,12 +56,7 @@ export default class Collection {
   async run(
     query: string
   ) {
-    if (!this.db) return {}
-
-    if (this.db.query) return this.db.query(query).run()
-
-    let result = await this.db.execute(query)
-    return result.rows
+    return this.connection.run(query)
   }
 
   async execute(
@@ -67,18 +65,7 @@ export default class Collection {
   ) {
 
     try {
-      if (this.db.query) return this.db.query(query).all(params)
-
-      let result = await this.db.execute({
-        sql: query, args: params
-      })
-
-      const columns: string[] = result.columns
-      return result.rows
-        .map(item => columns.reduce((result, key, index) => {
-          result[key] = item[index]
-          return result
-        }, {}))
+      return await this.connection.execute(query, params)
     } catch (error) {
       console.log(query, params, error)
       return []

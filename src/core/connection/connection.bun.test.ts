@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import Database from "bun:sqlite";
 import { Client } from "@libsql/client";
-import { connection } from "./connection";
+import { connection } from "./pool";
 
 const db = new Database();
 

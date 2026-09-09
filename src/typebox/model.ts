@@ -7,6 +7,7 @@ import { Value } from "@sinclair/typebox/value"
 import { parseSchema } from "./transform/schema"
 import { ValidationException } from "./validation-exception"
 import { FindOptions, FindFilter } from "../core/types"
+import { SqliteDriver } from "src/core/connection"
 
 
 const cache   : Record<string, Model<TSchema>> = {}
@@ -24,7 +25,7 @@ export class Model<T extends TSchema> extends Collection {
 
   constructor(
     public schema: T,
-    { db = client, name }: { db?: any, name?: string } = {}
+    { db = client, name }: { db?: SqliteDriver, name?: string } = {}
   ) {
     if (schema.$id === undefined) {
       if (name == undefined) throw new Error(`name or $id are mandatory`)
