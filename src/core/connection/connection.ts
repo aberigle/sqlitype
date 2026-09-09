@@ -1,9 +1,12 @@
-import { SqliteDriver } from "./types";
+import type { TSchema } from "@sinclair/typebox"
+import type { Model } from "../../typebox/model"
+import { ConnectionModel } from "../../typebox/connection-model"
+import { SqliteDriver } from "./types"
 
 export class Connection {
   db     : SqliteDriver
   name?  : string
-  models : Map<string, unknown>
+  models : Map<string, ConnectionModel<any>>
 
   constructor(
     db    : SqliteDriver,
@@ -12,6 +15,20 @@ export class Connection {
     this.db     = db
     this.name   = name
     this.models = new Map()
+  }
+
+  model<T extends TSchema>(
+    definition: Model<T>
+  ): ConnectionModel<T> {
+    const key      = definition.name
+    const existing = this.models.get(key) as ConnectionModel<T> | undefined
+
+    if (existing)
+      return existing
+
+    const bound = new ConnectionModel<T>(this, definition)
+    this.models.set(key, bound)
+    return bound
   }
 
   async run(
@@ -27,12 +44,11 @@ export class Connection {
   }
 
   async execute(
-    query: string,
-    params: Array<any> = []
+    query  : string,
+    params : Array<any> = []
   ): Promise<Array<Record<string, any>>> {
     if ("query" in this.db)
       return this.db.query(query).all(params)
-
 
     let result = await this.db.execute({
       sql: query, args: params
