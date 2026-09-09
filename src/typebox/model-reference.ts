@@ -1,4 +1,4 @@
-import { TSchema, Type } from "@sinclair/typebox";
+import { type TSchema, Type } from "@sinclair/typebox";
 import { Model } from "./model";
 
 export function ModelReference<T extends TSchema>(

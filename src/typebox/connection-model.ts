@@ -6,8 +6,18 @@ import { buildJoinQuery } from "../queries/build-join-query"
 import { buildOrderClause } from "../queries/build-order"
 import { isEmpty } from "../utils/objects"
 import type { Static, TSchema } from "@sinclair/typebox"
+import { Type } from "@sinclair/typebox"
+import { Value } from "@sinclair/typebox/value"
+import { modelDefinition } from "./model"
 import type { Model } from "./model"
 import { parseSchema } from "./transform/schema"
+import { ValidationException } from "./validation-exception"
+
+function referencedTable(property: any): string | undefined {
+  if (property?.type !== "object") return
+  if (typeof property.$id !== "string" || !property.$id.includes("ref")) return
+  return property.$id.split("@").pop()
+}
 
 export class ConnectionModel<T extends TSchema> extends Collection {
   schema: T
@@ -16,28 +26,55 @@ export class ConnectionModel<T extends TSchema> extends Collection {
     connection: Connection,
     public definition: Model<T>,
   ) {
-    super(connection.db, definition.name)
+    super(connection.db, definition.table)
     this.connection = connection
     this.schema = definition.schema
   }
 
-  async ensure(): Promise<Record<string, Field>> {
+
+  override async ensure(): Promise<Record<string, Field>> {
     if (!isEmpty(this.fields)) return this.fields
 
+    this.bindReferences()
+
     const references = Array.from(this.connection.models.values())
-    const parsed = parseSchema(this.schema, references)
+    const parsed     = parseSchema(this.schema, references)
     return this.fields = await super.ensure(parsed)
+  }
+
+  private bindReferences() {
+    for (const property of Object.values(this.schema.properties)) {
+      const table = referencedTable(property)
+      if (!table || this.connection.models.has(table)) continue
+
+      const definition = modelDefinition(table)
+      if (definition) this.connection.model(definition)
+    }
   }
 
   validate(
     model: Static<T>,
     partial = false
   ) {
-    return this.definition.validate(model, partial)
+    if (Value.Check(this.schema, model)) return true
+
+    const errors = [
+      ...Value.Errors(
+        partial
+          ? Type.Partial(this.schema)
+          : this.schema,
+        this.connection.schemas,
+        model)
+    ]
+      .filter(({ path }) => path !== "/id")
+
+    if (errors.length) throw new ValidationException(errors)
   }
 
   cast(value: any): Static<T> {
-    return this.definition.cast(value)
+    if (!value) return value
+
+    return Value.Clean(this.schema, Value.Convert(this.schema, { ...value }))
   }
 
   async findAndJoin(
