@@ -7,7 +7,8 @@ import { Value } from "@sinclair/typebox/value"
 import { parseSchema } from "./transform/schema"
 import { ValidationException } from "./validation-exception"
 import { FindOptions, FindFilter } from "../core/types"
-import { SqliteDriver } from "src/core/connection"
+import { SqliteDriver, resolveConnectionKey } from "src/core/connection"
+import type { Connection } from "src/core/connection"
 
 
 const cache   : Record<string, Model<TSchema>> = {}
@@ -23,6 +24,8 @@ export class Model<T extends TSchema> extends Collection {
     }
   }
 
+  name : string
+
   constructor(
     public schema: T,
     { db = client, name }: { db?: SqliteDriver, name?: string } = {}
@@ -34,8 +37,16 @@ export class Model<T extends TSchema> extends Collection {
 
     super(db, schema.$id)
 
+    this.name = schema.$id
     cache[schema.$id] = this
     schemas.push(this.schema)
+  }
+
+  using(connection: string | Connection): ConnectionModel<T> {
+    const conn = typeof connection === "string"
+      ? resolveConnectionKey(connection)
+      : connection
+    return conn.model(this)
   }
 
   async ensure(): Promise<Record<string, Field>> {
