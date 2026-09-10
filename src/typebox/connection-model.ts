@@ -119,6 +119,8 @@ export class ConnectionModel<T extends TSchema> extends Collection {
       `SELECT count(*) as count ${from}${where}`,
       params
     )
+    if (!row) return 0
+
     return Number(row.count)
   }
 
@@ -132,7 +134,7 @@ export class ConnectionModel<T extends TSchema> extends Collection {
       .map(item => this.cast(this.transform(item)))
   }
 
-  async insert(
+  override async insert(
     model: Omit<Static<T>, "id">
   ): Promise<Static<T>> {
     this.validate(model)
@@ -140,7 +142,7 @@ export class ConnectionModel<T extends TSchema> extends Collection {
     return this.cast(result)
   }
 
-  async find(
+  override async find(
     search: FindFilter<Static<T>> = {},
     options: FindOptions<Static<T>> = {}
   ): Promise<Array<Static<T>>> {
@@ -148,14 +150,14 @@ export class ConnectionModel<T extends TSchema> extends Collection {
     return result.map(item => this.cast(item))
   }
 
-  async findById(query: any): Promise<Static<T>> {
+  override async findById(query: any): Promise<Static<T>> {
     const result = await super.findById(query)
     if (!result) return undefined
 
     return this.cast(result)
   }
 
-  async update(
+  override async update(
     id: any,
     model: Partial<Static<T>>
   ): Promise<Static<T>> {
