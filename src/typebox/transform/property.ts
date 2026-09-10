@@ -1,4 +1,4 @@
-import { TObject, TSchema, TUnion } from "@sinclair/typebox";
+import type { TObject, TSchema, TUnion } from "@sinclair/typebox";
 import { Field } from "../../core";
 import type { RefModel } from "../../core";
 
@@ -26,7 +26,7 @@ function parseUnionProperty(
   // all elements are Literal
   if (!hasAnyNotLiteral)
     return parseProperty(
-      field.anyOf[0],
+      field.anyOf[0] as TSchema,
       references,
       options
     )

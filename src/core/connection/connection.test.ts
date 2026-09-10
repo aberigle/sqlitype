@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "bun:test";
 
 import { Connection } from "./connection";
 import { connection, resetPool } from "./pool";
-import { SqliteDriver } from "./types";
+import type { SqliteDriver } from "./types";
 
 function fakeDb() {
   return { tag: Math.random().toString(36) } as unknown as SqliteDriver

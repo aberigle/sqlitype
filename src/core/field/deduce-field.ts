@@ -1,5 +1,6 @@
 import Field from "./field"
-import { FieldType, TypeMap } from "./types"
+import type { FieldType } from "./types"
+import { TypeMap } from "./types"
 
 
 /**

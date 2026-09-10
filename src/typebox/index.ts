@@ -1,4 +1,4 @@
-import { TSchema } from "@sinclair/typebox"
+import type { TSchema } from "@sinclair/typebox"
 import { Model } from "./model"
 import { ModelReference } from "./model-reference"
 import { ConnectionModel } from "./connection-model"

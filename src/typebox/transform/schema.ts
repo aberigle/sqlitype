@@ -1,6 +1,7 @@
 import { Field } from "../../core"
-import { TSchema } from "@sinclair/typebox"
-import { parseProperty, RefSchema } from "./property"
+import type { TSchema } from "@sinclair/typebox"
+import { parseProperty } from "./property"
+import type { RefSchema } from "./property"
 
 export function parseSchema(
   object     : TSchema,

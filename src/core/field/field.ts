@@ -1,4 +1,4 @@
-import { FieldType } from "./types"
+import type { FieldType } from "./types"
 
 export interface RefModel {
   table  : string
