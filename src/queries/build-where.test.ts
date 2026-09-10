@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test"
 import { Type } from "@sinclair/typebox"
 
 import { Field } from "../core/field"
+import type { RefModel } from "../core/field"
 import { Model } from "../typebox"
 import { buildWhere } from "./build-where"
 
@@ -221,7 +222,7 @@ describe("queries", () => {
 
     it("supports null filter on ref field (IS NULL, no join)", () => {
       const model = new Model(Type.Object({ id: Type.Number() }), { name: "other" })
-      const field = new Field("id").reference(model)
+      const field = new Field("id").reference(model as unknown as RefModel)
 
       const { sql, args, joins } = buildWhere(
         { reference: field },
@@ -235,7 +236,7 @@ describe("queries", () => {
 
     it("supports non-null filter on ref field (goes to joins)", () => {
       const model = new Model(Type.Object({ id: Type.Number() }), { name: "other" })
-      const field = new Field("id").reference(model)
+      const field = new Field("id").reference(model as unknown as RefModel)
 
       const { sql, args, joins } = buildWhere(
         { reference: field },
@@ -267,7 +268,7 @@ describe("queries", () => {
 
     it("supports $ne null filter on ref field (IS NOT NULL, no join)", () => {
       const model = new Model(Type.Object({ id: Type.Number() }), { name: "other" })
-      const field = new Field("id").reference(model)
+      const field = new Field("id").reference(model as unknown as RefModel)
 
       const { sql, args, joins } = buildWhere(
         { reference: field },

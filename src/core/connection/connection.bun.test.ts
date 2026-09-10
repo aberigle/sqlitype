@@ -29,7 +29,7 @@ export function testConnection(
 
     const rows = await conn.execute(`SELECT * FROM test_execute`)
     expect(rows.length).toBe(1)
-    expect(rows[0].name).toBe("Ana")
+    expect(rows[0]!.name).toBe("Ana")
   })
 
   it("binds positional params in execute", async () => {
@@ -38,6 +38,6 @@ export function testConnection(
     await conn.execute(`INSERT INTO test_params (name, age) VALUES (?, ?)`, ["Luis", 30])
 
     const rows = await conn.execute(`SELECT * FROM test_params WHERE name = ?`, ["Luis"])
-    expect(rows[0].age).toBe(30)
+    expect(rows[0]!.age).toBe(30)
   })
 }

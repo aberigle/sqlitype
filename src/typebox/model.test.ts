@@ -25,7 +25,7 @@ export function testModel(
     await model.insert({ test: 1 })
 
     let [result] = await model.execute(`SELECT * FROM test`)
-    expect(result.test).toBe(1)
+    expect(result!.test).toBe(1)
   })
 
   it('alters table with new fields', async () => {
@@ -35,8 +35,8 @@ export function testModel(
     await model.insert({ field: "success", test: 2 })
 
     let [result] = await model.execute(`SELECT * FROM test LIMIT 1 OFFSET 1`)
-    expect(result.test).toBe(2)
-    expect(result.field).toBe("success")
+    expect(result!.test).toBe(2)
+    expect(result!.field).toBe("success")
   })
 
   it('validates data inserted', async () => {
@@ -68,7 +68,7 @@ export function testModel(
     expect(() => Value.Assert(Type.Array(schema), result)).not.toThrow()
     expect(result.length).toBe(1)
     expect(() => Value.Assert(schema, result[0])).not.toThrow()
-    expect(result[0].test).toEqual(1)
+    expect(result[0]!.test).toEqual(1)
   })
 
   it('can search by id', async () => {
@@ -120,7 +120,7 @@ export function testModel(
     expect(() => Value.Assert(Type.Array(schema), result)).not.toThrow()
     expect(result.length).toBe(1)
     expect(() => Value.Assert(schema, result[0])).not.toThrow()
-    expect(result[0].field).toEqual("success")
+    expect(result[0]!.field).toEqual("success")
   })
 
   it('supports dates', async () => {
@@ -300,19 +300,19 @@ export function testModel(
     it("filters nested relations recursively", async () => {
       const [result] = await Two.findAndJoin({ "one": { id: 1 }, another: {} })
 
-      expect(result.one).toBeObject()
-      const oneResult = result.one as Static<typeof OneSchema>
+      expect(result!.one).toBeObject()
+      const oneResult = result!.one as Static<typeof OneSchema>
 
       expect(oneResult.date).toEqual(new Date("2025-02-01"))
       expect(oneResult.id).toBe(1)
 
-      const threeInserted = await Three.insert({ field: "three", two: result })
+      const threeInserted = await Three.insert({ field: "three", two: result! })
       expect(threeInserted.field).toBe("three")
 
       const [three] = await Three.findAndJoin({ two: { one: { id: 1 } } })
-      expect(three.field).toBe("three")
+      expect(three!.field).toBe("three")
 
-      const two = three.two as Static<typeof TwoSchema>
+      const two = three!.two as Static<typeof TwoSchema>
       expect("field" in two).toBe(true)
 
       const one = two.one as Static<typeof OneSchema>
@@ -325,8 +325,8 @@ export function testModel(
     it("filters nested relations with $in", async () => {
       const [result] = await Two.findAndJoin({ "one": { id: { $in: [1] } } })
 
-      expect(result.one).toBeObject()
-      const oneResult = result.one as Static<typeof OneSchema>
+      expect(result!.one).toBeObject()
+      const oneResult = result!.one as Static<typeof OneSchema>
       expect(oneResult.id).toBe(1)
     })
 
@@ -337,8 +337,8 @@ export function testModel(
       await Two.insert({ field: "other", one: oneB })
 
       const [result] = await Two.findAndJoin({ id: target.id, one: { test: { $ne: "exclude" } } })
-      expect(result.id).toBe(target.id)
-      expect(result.one.test).toBe("keep")
+      expect(result!.id).toBe(target.id)
+      expect(result!.one.test).toBe("keep")
     })
 
     it("filters optional ModelReference by null", async () => {
@@ -348,17 +348,17 @@ export function testModel(
 
       const result = await Two.find({ another: null, id: target.id })
       expect(result.length).toBe(1)
-      expect(result[0].field).toBe("noRef")
-      expect(result[0].another).toBeUndefined()
+      expect(result[0]!.field).toBe("noRef")
+      expect(result[0]!.another).toBeUndefined()
     })
 
 
     it("filters optional ModelReference by null with findAndJoin", async () => {
       const [result] = await Two.findAndJoin({ another: null, field: "noRef", one: {} })
 
-      expect(result.field).toBe("noRef")
-      expect(result.one.id).toBeNumber()
-      expect(result.another).toBeUndefined()
+      expect(result!.field).toBe("noRef")
+      expect(result!.one.id).toBeNumber()
+      expect(result!.another).toBeUndefined()
     })
 
     it("filters optional ModelReference by $ne: null", async () => {
@@ -368,14 +368,14 @@ export function testModel(
 
       const result = await Two.find({ another: { $ne: null }, id: target.id })
       expect(result.length).toBe(1)
-      expect(result[0].another).not.toBeUndefined()
-      expect(result[0].another?.id).toBe(oneInserted.id)
+      expect(result[0]!.another).not.toBeUndefined()
+      expect(result[0]!.another?.id).toBe(oneInserted.id)
     })
 
     it("filters optional ModelReference by $ne: null with findAndJoin", async () => {
       const [result] = await Two.findAndJoin({ another: { $ne: null }, field: "hasAnother", one: {} })
-      expect(result.another).not.toBeUndefined()
-      expect(result.another?.id).toBeNumber()
+      expect(result!.another).not.toBeUndefined()
+      expect(result!.another?.id).toBeNumber()
     })
 
     it("supports relation updates", async () => {
@@ -383,13 +383,13 @@ export function testModel(
       const [two] = await Two.findAndJoin({ "one": { id: 1 } })
       const oneInserted = await One.insert({ test: "references", date })
 
-      await Two.update(two.id, {
+      await Two.update(two!.id, {
         one: oneInserted
       })
 
       const [twoUpdated] = await Two.findAndJoin({ "one": { id: oneInserted.id } })
-      expect(twoUpdated.one.id).toBe(oneInserted.id as number)
-      expect(twoUpdated.one.date).toEqual(date)
+      expect(twoUpdated!.one.id).toBe(oneInserted.id as number)
+      expect(twoUpdated!.one.date).toEqual(date)
     })
 
     it("uses correct join alias when field name differs from table name", async () => {
@@ -412,7 +412,7 @@ export function testModel(
 
       const results = await main.findAndJoin({ alias: { name: "keep" } })
       expect(results.length).toBe(1)
-      expect(results[0].alias.name).toBe("keep")
+      expect(results[0]!.alias.name).toBe("keep")
     })
 
     it("counts with simple filter", async () => {
@@ -444,14 +444,14 @@ export function testModel(
           field: "asc"
         }
       })
-      expect(result[0].field).toBe("aaa")
-      expect(result[1].field).toBe("bbb")
+      expect(result[0]!.field).toBe("aaa")
+      expect(result[1]!.field).toBe("bbb")
     })
 
     it("can order findAndJoin by top-level field descending", async () => {
       const result = await Two.findAndJoin({ field: { $in: ["aaa", "bbb"] } }, { order: { field: "desc" } })
-      expect(result[0].field).toBe("bbb")
-      expect(result[1].field).toBe("aaa")
+      expect(result[0]!.field).toBe("bbb")
+      expect(result[1]!.field).toBe("aaa")
     })
 
     it("can order findAndJoin by related string field", async () => {
@@ -466,9 +466,9 @@ export function testModel(
         { one: { test: { $in: ["alpha", "beta", "gamma"] } } },
         { order: { "one.test" : "asc" } }
       )
-      expect(result[0].one.test).toBe("alpha")
-      expect(result[1].one.test).toBe("beta")
-      expect(result[2].one.test).toBe("gamma")
+      expect(result[0]!.one.test).toBe("alpha")
+      expect(result[1]!.one.test).toBe("beta")
+      expect(result[2]!.one.test).toBe("gamma")
     })
 
   })
@@ -486,8 +486,8 @@ export function testModel(
       { test: { $in: [100, 200] } },
       { order: { test: "asc" } }
     )
-    expect(result[0].test).toBe(100)
-    expect(result[1].test).toBe(200)
+    expect(result[0]!.test).toBe(100)
+    expect(result[1]!.test).toBe(200)
   })
 
   it("can order Model.find descending", async () => {
@@ -498,8 +498,8 @@ export function testModel(
       { test: { $in: [100, 200] } },
       { order: { test: "desc" } }
     )
-    expect(result[0].test).toBe(200)
-    expect(result[1].test).toBe(100)
+    expect(result[0]!.test).toBe(200)
+    expect(result[1]!.test).toBe(100)
   })
 
   it("can use order with limit on Model.find", async () => {
@@ -514,7 +514,7 @@ export function testModel(
       { order: { test: "asc" }, limit: 1 }
     )
     expect(result.length).toBe(1)
-    expect(result[0].test).toBe(300)
+    expect(result[0]!.test).toBe(300)
   })
 
 }

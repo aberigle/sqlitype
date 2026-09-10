@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import { Type } from '@sinclair/typebox'
 import { parseProperty } from './property'
+import type { RefSchema } from './property'
 import { fromTypebox } from '..'
 import { ModelReference } from '../model-reference'
 
@@ -59,7 +60,7 @@ describe('typebox properties',() => {
 
     it("Type.Union for relations", () => {
       const ref   = fromTypebox(Type.Object({ test: Type.String() }, { $id: "RefTest" }))
-      const field = parseProperty(ModelReference(ref), [ref])
+      const field = parseProperty(ModelReference(ref), [ref as unknown as RefSchema])
 
       expect(field.type).toBe("id")
     })

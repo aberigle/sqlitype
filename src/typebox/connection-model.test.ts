@@ -31,7 +31,7 @@ export function testConnectionModel(factory: () => Driver) {
     expect(found?.name).toBe("ana")
 
     const [row] = await conn.execute("SELECT * FROM CMCrud")
-    expect(row.name).toBe("ana")
+    expect(row!.name).toBe("ana")
   })
 
   it("dedupes one definition + one connection into a single ConnectionModel", () => {
@@ -83,12 +83,12 @@ export function testConnectionModel(factory: () => Driver) {
     await postsB.insert({ title: "post-b", author: bob })
 
     const [postA] = await postsA.findAndJoin({ author: { name: "alice" } })
-    expect(postA.title).toBe("post-a")
-    expect(postA.author.name).toBe("alice")
+    expect(postA!.title).toBe("post-a")
+    expect(postA!.author.name).toBe("alice")
 
     const [postB] = await postsB.findAndJoin({ author: { name: "bob" } })
-    expect(postB.title).toBe("post-b")
-    expect(postB.author.name).toBe("bob")
+    expect(postB!.title).toBe("post-b")
+    expect(postB!.author.name).toBe("bob")
 
     expect(await postsB.findAndJoin({ author: { name: "alice" } })).toEqual([])
     expect(await postsA.findAndJoin({ author: { name: "bob" } })).toEqual([])
@@ -96,8 +96,8 @@ export function testConnectionModel(factory: () => Driver) {
     expect(await postsB.count({ author: { name: "bob" } })).toBe(1)
     expect(await postsA.count({ author: { name: "alice" } })).toBe(1)
 
-    expect(postsA.fields.author.ref).toBe(usersA)
-    expect(postsA.fields.author.ref).not.toBe(usersB)
-    expect(postsB.fields.author.ref).toBe(usersB)
+    expect(postsA.fields.author!.ref).toBe(usersA)
+    expect(postsA.fields.author!.ref).not.toBe(usersB)
+    expect(postsB.fields.author!.ref).toBe(usersB)
   })
 }

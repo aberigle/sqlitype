@@ -9,9 +9,10 @@ import {
   getDefaultConnection,
   resetPool,
 } from "./pool";
+import type { SqliteDriver } from "./types";
 
 function fakeDb() {
-  return { tag: Math.random().toString(36) }
+  return { tag: Math.random().toString(36) } as unknown as SqliteDriver
 }
 
 describe("connection pool", () => {
@@ -48,7 +49,7 @@ describe("connection pool", () => {
     const called = { n: 0 }
     resolveConnection(() => { called.n++; return connection(fakeDb(), { name: "main" }) })
 
-    expect(resolveConnectionKey("main")).toBe(connectionByName("main"))
+    expect(resolveConnectionKey("main")).toBe(connectionByName("main")!)
     expect(called.n).toBe(0) // el registry gana, el hook NO se llama
   })
 
@@ -59,7 +60,7 @@ describe("connection pool", () => {
       return connection(fakeDb(), { name: key })
     })
 
-    expect(resolveConnectionKey("tenant:a")).toBe(connectionByName("tenant:a"))
+    expect(resolveConnectionKey("tenant:a")).toBe(connectionByName("tenant:a")!)
     expect(seen).toEqual(["tenant:a"])
   })
 
@@ -72,7 +73,7 @@ describe("connection pool", () => {
     resolveConnection(() => connection(a, { name: "x" }))
     resolveConnection(() => connection(fakeDb(), { name: "x" }))
 
-    expect(resolveConnectionKey("x")).toBe(connectionByName("x"))
+    expect(resolveConnectionKey("x")).toBe(connectionByName("x")!)
     expect(connectionByName("x")).not.toBe(connection(a))
   })
 
