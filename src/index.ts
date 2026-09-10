@@ -1,4 +1,13 @@
-import { Collection, Field, connection, resolveConnection, connectionByName, setDefaultConnection } from "./core"
+import {
+  Collection,
+  Field,
+  connection,
+  resolveConnection,
+  connectionByName,
+  setDefaultConnection
+} from "./core"
+
+import type { SqliteDriver } from "./core/connection"
 import { fromTypebox, Model, ModelReference, ConnectionModel } from "./typebox"
 
 export type { FindFilter } from "./core/types"
@@ -16,7 +25,7 @@ export const sqlitype = {
     Collection,
     Field
   },
-  useClient: (client) => setDefaultConnection(client)
+  useClient: (client : SqliteDriver) => setDefaultConnection(client)
 }
 
 export default sqlitype
