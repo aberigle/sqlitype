@@ -1,4 +1,4 @@
-import { Field } from "../core/field"
+import { Field, type RefModel } from "../core/field"
 import { isEmpty } from "../utils/objects"
 import { buildWhere } from "./build-where"
 import { Model } from "src/typebox"
@@ -30,21 +30,25 @@ export async function buildJoinQuery(
   ): Promise<string[]> {
     const result: string[] = []
 
-    for (const field of Object.keys(fields)) {
-      if (fields[field].type != "id") continue
+    for (const key of Object.keys(fields)) {
+      const field = fields[key]
 
-      const isRequired = fields[field].required
+      if (!field) continue
 
-      const model = fields[field].ref as Model<never>
+      if (field.type != "id") continue
+
+      const isRequired = field.required
+
+      const model = field.ref as RefModel
       await model.ensure()
 
       const {
         sql,
         args,
         joins
-      } = buildWhere(model.fields, filter[field], field )
+      } = buildWhere(model.fields, filter[key], key )
 
-      from += `${isRequired ? 'INNER' : 'LEFT'} JOIN ${model.table} AS ${field} ON ${field}.id = ${table}.${field} `
+      from += `${isRequired ? 'INNER' : 'LEFT'} JOIN ${model.table} AS ${key} ON ${key}.id = ${table}.${key} `
 
       if (sql.length)  where.push(sql)
       if (args.length) params.push(...args)
@@ -54,18 +58,18 @@ export async function buildJoinQuery(
       if (!isEmpty(joins)) {
         const prop = await processJoins(
           joins,
-          field,
-          filter[field],
+          key,
+          filter[key],
           true
         )
         nested.push(...prop)
       }
 
       if (isNested) result.push(...[
-        `'${field}'`,// the field name
-        model.toJSON_OBJECT({ nested, alias: field }) // the field value as json
+        `'${key}'`,// the field name
+        model.toJSON_OBJECT({ nested, alias: key }) // the field value as json
       ])
-      else select += `, ${model.toJSON_OBJECT({ nested, alias: field })} as '${field}' `
+      else select += `, ${model.toJSON_OBJECT({ nested, alias: key })} as '${key}' `
     }
 
     return result
