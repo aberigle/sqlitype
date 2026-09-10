@@ -1,5 +1,7 @@
+import { objectKeys } from "@/src/utils/object-keys"
 import Field from "./field"
-import { FieldType, PragmaResult, TypeMap } from "./types"
+import type { FieldType, PragmaResult } from "./types"
+import { TypeMap } from "./types"
 
 
 /**
@@ -15,7 +17,7 @@ export function parseFieldListFromDb(
     const field = parseFieldFromDb(current)
     result[field.name] = new Field(field.type)
     return result
-  }, {})
+  }, {} as Record<string, Field>)
 }
 
 export function parseFieldFromDb(
@@ -33,7 +35,7 @@ export function parseFieldFromDb(
   if (!type && pragma.type === "INTEGER") type = "id"
 
   if (type === undefined)
-    type = Object.keys(TypeMap).find((type) => TypeMap[type] == pragma.type) as FieldType
+    type = objectKeys(TypeMap).find((type) => TypeMap[type] == pragma.type) as FieldType
 
   return { name, type }
 }
