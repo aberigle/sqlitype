@@ -1,6 +1,6 @@
 export interface QueryStatement {
-  all(params?: any[]): any[];
-  run(): any;
+  all(...params: any[]): any[];
+  run(...params: any[]): any;
 }
 
 export interface SqliteQueryDriver {
@@ -14,11 +14,11 @@ export interface ExecuteStatement {
 
 export interface SqlExecuteResult {
   columns: string[];
-  rows: any[][];
+  rows: any[];
 }
 
 export interface SqliteExecuteDriver {
-  execute(query: string | ExecuteStatement): Promise<SqlExecuteResult>;
+  execute(query: any): Promise<SqlExecuteResult>;
 }
 
 export type SqliteDriver = SqliteQueryDriver | SqliteExecuteDriver;
