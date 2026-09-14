@@ -19,5 +19,3 @@ export const TypeMap: Record<FieldType, string> = {
   "array"   : "TEXT",
   "id"      : "INTEGER"
 }
-
-

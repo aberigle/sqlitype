@@ -1,10 +1,11 @@
-import { Client } from '@libsql/client';
-import { Static, Type } from '@sinclair/typebox';
+import { type Client } from '@libsql/client';
+import { type Static, Type } from '@sinclair/typebox';
 import { Value } from '@sinclair/typebox/value';
 import Database from 'bun:sqlite';
-import { describe, expect, it } from 'bun:test';
+import { beforeEach, describe, expect, it } from 'bun:test';
 import { Model } from './model';
 import { ModelReference } from './model-reference';
+import { resetPool, setDefaultConnection } from '../core/connection';
 
 describe('typebox', () => describe("model (bun)", () => testModel(new Database())))
 
@@ -12,30 +13,35 @@ export function testModel(
   connection: Database | Client
 ) {
 
+  beforeEach(() => {
+    resetPool()
+    setDefaultConnection(connection)
+  })
+
   it('inserts in a new collection', async () => {
     const schema = Type.Object({ id: Type.Number(), test: Type.Number() })
-    const model = new Model(schema, { name: "test", db: connection })
+    const model = new Model(schema, { name: "test" })
 
     await model.insert({ test: 1 })
 
     let [result] = await model.execute(`SELECT * FROM test`)
-    expect(result.test).toBe(1)
+    expect(result!.test).toBe(1)
   })
 
   it('alters table with new fields', async () => {
     const schema = Type.Object({ test: Type.Number(), field: Type.String() })
-    const model = new Model(schema, { name: "test", db: connection })
+    const model = new Model(schema, { name: "test" })
 
     await model.insert({ field: "success", test: 2 })
 
     let [result] = await model.execute(`SELECT * FROM test LIMIT 1 OFFSET 1`)
-    expect(result.test).toBe(2)
-    expect(result.field).toBe("success")
+    expect(result!.test).toBe(2)
+    expect(result!.field).toBe("success")
   })
 
   it('validates data inserted', async () => {
     const schema = Type.Object({ test: Type.Number() })
-    const model = new Model(schema, { name: "test", db: connection })
+    const model = new Model(schema, { name: "test" })
 
     // @ts-ignore
     expect(async () => await model.insert({ test: "hola" })).toThrowError("Validation error")
@@ -43,7 +49,7 @@ export function testModel(
 
   it('retrieves the models', async () => {
     const schema = Type.Object({ test: Type.Number() })
-    const model = new Model(schema, { name: "test", db: connection })
+    const model = new Model(schema, { name: "test" })
 
     const result = await model.find()
 
@@ -55,19 +61,19 @@ export function testModel(
 
   it('can search', async () => {
     const schema = Type.Object({ test: Type.Number() })
-    const model = new Model(schema, { name: "test", db: connection })
+    const model = new Model(schema, { name: "test" })
 
     let result = await model.find({ test: 1 })
 
     expect(() => Value.Assert(Type.Array(schema), result)).not.toThrow()
     expect(result.length).toBe(1)
     expect(() => Value.Assert(schema, result[0])).not.toThrow()
-    expect(result[0].test).toEqual(1)
+    expect(result[0]!.test).toEqual(1)
   })
 
   it('can search by id', async () => {
     const schema = Type.Object({ test: Type.Number(), id: Type.Number() })
-    const model = new Model(schema, { name: "test", db: connection })
+    const model = new Model(schema, { name: "test" })
 
     let result = await model.findById(2)
 
@@ -82,7 +88,7 @@ export function testModel(
 
   it('can search with $in on numbers', async () => {
     const schema = Type.Object({ test: Type.Number(), id: Type.Number(), name: Type.String() })
-    const model = new Model(schema, { name: "test", db: connection })
+    const model = new Model(schema, { name: "test" })
 
     let result = await model.find({ test: { $in: [1, 3] }, name: null })
     expect(result.length).toBe(1)
@@ -91,7 +97,7 @@ export function testModel(
 
   it('can search with $in on strings', async () => {
     const schema = Type.Object({ test: Type.Number(), field: Type.String() })
-    const model = new Model(schema, { name: "test", db: connection })
+    const model = new Model(schema, { name: "test" })
 
     let result = await model.find({ field: { $in: ["success", "changed"] } })
     expect(result.length).toBeGreaterThanOrEqual(1)
@@ -99,7 +105,7 @@ export function testModel(
 
   it('can search with $nin', async () => {
     const schema = Type.Object({ test: Type.Number(), id: Type.Number() })
-    const model = new Model(schema, { name: "test", db: connection })
+    const model = new Model(schema, { name: "test" })
 
     let result = await model.find({ test: { $nin: [1, 3] } })
     expect(result.length).toBeGreaterThanOrEqual(1)
@@ -108,18 +114,18 @@ export function testModel(
 
   it('can search strings with wildcards', async () => {
     const schema = Type.Object({ test: Type.Number(), field: Type.String() })
-    const model = new Model(schema, { name: "test", db: connection })
+    const model = new Model(schema, { name: "test" })
     let result = await model.find({ field: "%ess" })
 
     expect(() => Value.Assert(Type.Array(schema), result)).not.toThrow()
     expect(result.length).toBe(1)
     expect(() => Value.Assert(schema, result[0])).not.toThrow()
-    expect(result[0].field).toEqual("success")
+    expect(result[0]!.field).toEqual("success")
   })
 
   it('supports dates', async () => {
     const schema = Type.Object({ id: Type.Number(), test: Type.Number(), date: Type.Date() })
-    const model = new Model(schema, { name: "test", db: connection })
+    const model = new Model(schema, { name: "test" })
 
     let date = new Date("2025-01-01")
     let inserted = await model.insert({ date, test: 2 })
@@ -128,10 +134,10 @@ export function testModel(
     expect(inserted.date).toEqual(date)
 
     let result = await model.find({ id: inserted.id })
-    expect(result[0].date).toEqual(date)
+    expect(result[0]?.date).toEqual(date)
 
     result = await model.find({ date: { $lt: new Date() } })
-    expect(result[0].date).toEqual(date)
+    expect(result[0]?.date).toEqual(date)
   })
 
   it('supports objects', async () => {
@@ -139,7 +145,7 @@ export function testModel(
       id: Type.Number(),
       object: Type.Object({ hola: Type.String() })
     })
-    const model = new Model(schema, { name: "test", db: connection })
+    const model = new Model(schema, { name: "test" })
 
     let object = { hola: "mundo" }
     let inserted = await model.insert({ object })
@@ -156,7 +162,7 @@ export function testModel(
       id: Type.Number(),
       nested: Type.Object({ date: Type.Date() })
     })
-    const model = new Model(schema, { name: "test", db: connection })
+    const model = new Model(schema, { name: "test" })
 
     const date = new Date("2025-06-15")
     let inserted = await model.insert({ nested: { date } })
@@ -174,7 +180,7 @@ export function testModel(
       id: Type.Number(),
       list: Type.Array(Type.String())
     })
-    const model = new Model(schema, { name: "test", db: connection })
+    const model = new Model(schema, { name: "test" })
 
     let list = ["list", "two", "three"]
     let inserted = await model.insert({ list })
@@ -188,7 +194,7 @@ export function testModel(
 
   it('supports updates', async () => {
     const schema = Type.Object({ test: Type.Number(), id: Type.Number() })
-    const model = new Model(schema, { name: "test", db: connection })
+    const model = new Model(schema, { name: "test" })
 
     const value = Date.now()
     const update = await model.update(3, { test: value })
@@ -202,7 +208,7 @@ export function testModel(
 
   it('handles updates on missing rows', async () => {
     const schema = Type.Object({ test: Type.Number(), id: Type.Number() })
-    const model = new Model(schema, { name: "test", db: connection })
+    const model = new Model(schema, { name: "test" })
 
     const result = await model.update(9999, { test: 42 })
     expect(result).toBeUndefined()
@@ -214,7 +220,7 @@ export function testModel(
       success: Type.Boolean(),
       id: Type.Number()
     })
-    const model = new Model(schema, { name: "test", db: connection })
+    const model = new Model(schema, { name: "test" })
 
     const inserted = await model.insert({ success: true })
     expect(() => Value.Assert(schema, inserted)).not.toThrow()
@@ -241,7 +247,7 @@ export function testModel(
       test: Type.Number(),
       id: Type.Number()
     })
-    const model = new Model(schema, { name: "test", db: connection })
+    const model = new Model(schema, { name: "test" })
 
     const inserted = await model.insert({ test: 5 })
     expect(() => Value.Assert(schema, inserted)).not.toThrow()
@@ -266,7 +272,7 @@ export function testModel(
       date: Type.Date(),
       test: Type.String()
     }, { $id: "One" })
-    const One = new Model(OneSchema, { db: connection })
+    const One = new Model(OneSchema)
 
     const TwoSchema = Type.Object({
       id: Type.Number(),
@@ -274,14 +280,14 @@ export function testModel(
       one: ModelReference(One),
       another: Type.Optional(ModelReference(One))
     }, { $id: "Two" })
-    const Two = new Model(TwoSchema, { db: connection })
+    const Two = new Model(TwoSchema)
 
     const ThreeSchema = Type.Object({
       id: Type.Number(),
       field: Type.String(),
       two: ModelReference(Two)//Type.Union([Type.Number(), TwoSchema])
     }, { $id: "Three" })
-    const Three = new Model(ThreeSchema, { db: connection })
+    const Three = new Model(ThreeSchema)
 
     it("creates relations", async () => {
       const oneInserted = await One.insert({ test: "references", date: new Date("2025-02-01") })
@@ -294,19 +300,19 @@ export function testModel(
     it("filters nested relations recursively", async () => {
       const [result] = await Two.findAndJoin({ "one": { id: 1 }, another: {} })
 
-      expect(result.one).toBeObject()
-      const oneResult = result.one as Static<typeof OneSchema>
+      expect(result!.one).toBeObject()
+      const oneResult = result!.one as Static<typeof OneSchema>
 
       expect(oneResult.date).toEqual(new Date("2025-02-01"))
       expect(oneResult.id).toBe(1)
 
-      const threeInserted = await Three.insert({ field: "three", two: result })
+      const threeInserted = await Three.insert({ field: "three", two: result! })
       expect(threeInserted.field).toBe("three")
 
       const [three] = await Three.findAndJoin({ two: { one: { id: 1 } } })
-      expect(three.field).toBe("three")
+      expect(three!.field).toBe("three")
 
-      const two = three.two as Static<typeof TwoSchema>
+      const two = three!.two as Static<typeof TwoSchema>
       expect("field" in two).toBe(true)
 
       const one = two.one as Static<typeof OneSchema>
@@ -319,8 +325,8 @@ export function testModel(
     it("filters nested relations with $in", async () => {
       const [result] = await Two.findAndJoin({ "one": { id: { $in: [1] } } })
 
-      expect(result.one).toBeObject()
-      const oneResult = result.one as Static<typeof OneSchema>
+      expect(result!.one).toBeObject()
+      const oneResult = result!.one as Static<typeof OneSchema>
       expect(oneResult.id).toBe(1)
     })
 
@@ -331,8 +337,8 @@ export function testModel(
       await Two.insert({ field: "other", one: oneB })
 
       const [result] = await Two.findAndJoin({ id: target.id, one: { test: { $ne: "exclude" } } })
-      expect(result.id).toBe(target.id)
-      expect(result.one.test).toBe("keep")
+      expect(result!.id).toBe(target.id)
+      expect(result!.one.test).toBe("keep")
     })
 
     it("filters optional ModelReference by null", async () => {
@@ -342,17 +348,17 @@ export function testModel(
 
       const result = await Two.find({ another: null, id: target.id })
       expect(result.length).toBe(1)
-      expect(result[0].field).toBe("noRef")
-      expect(result[0].another).toBeUndefined()
+      expect(result[0]!.field).toBe("noRef")
+      expect(result[0]!.another).toBeUndefined()
     })
 
 
     it("filters optional ModelReference by null with findAndJoin", async () => {
       const [result] = await Two.findAndJoin({ another: null, field: "noRef", one: {} })
 
-      expect(result.field).toBe("noRef")
-      expect(result.one.id).toBeNumber()
-      expect(result.another).toBeUndefined()
+      expect(result!.field).toBe("noRef")
+      expect(result!.one.id).toBeNumber()
+      expect(result!.another).toBeUndefined()
     })
 
     it("filters optional ModelReference by $ne: null", async () => {
@@ -362,14 +368,14 @@ export function testModel(
 
       const result = await Two.find({ another: { $ne: null }, id: target.id })
       expect(result.length).toBe(1)
-      expect(result[0].another).not.toBeUndefined()
-      expect(result[0].another?.id).toBe(oneInserted.id)
+      expect(result[0]!.another).not.toBeUndefined()
+      expect(result[0]!.another?.id).toBe(oneInserted.id)
     })
 
     it("filters optional ModelReference by $ne: null with findAndJoin", async () => {
       const [result] = await Two.findAndJoin({ another: { $ne: null }, field: "hasAnother", one: {} })
-      expect(result.another).not.toBeUndefined()
-      expect(result.another?.id).toBeNumber()
+      expect(result!.another).not.toBeUndefined()
+      expect(result!.another?.id).toBeNumber()
     })
 
     it("supports relation updates", async () => {
@@ -377,13 +383,13 @@ export function testModel(
       const [two] = await Two.findAndJoin({ "one": { id: 1 } })
       const oneInserted = await One.insert({ test: "references", date })
 
-      await Two.update(two.id, {
+      await Two.update(two!.id, {
         one: oneInserted
       })
 
       const [twoUpdated] = await Two.findAndJoin({ "one": { id: oneInserted.id } })
-      expect(twoUpdated.one.id).toBe(oneInserted.id as number)
-      expect(twoUpdated.one.date).toEqual(date)
+      expect(twoUpdated!.one.id).toBe(oneInserted.id as number)
+      expect(twoUpdated!.one.date).toEqual(date)
     })
 
     it("uses correct join alias when field name differs from table name", async () => {
@@ -391,13 +397,13 @@ export function testModel(
         id: Type.Number(),
         name: Type.String()
       }, { $id: "RefModel" })
-      const refModel = new Model(Ref, { db: connection })
+      const refModel = new Model(Ref)
 
       const Main = Type.Object({
         id: Type.Number(),
         alias: ModelReference(refModel)
       }, { $id: "Main" })
-      const main = new Model(Main, { db: connection })
+      const main = new Model(Main)
 
       const ref1 = await refModel.insert({ name: "keep" })
       const ref2 = await refModel.insert({ name: "exclude" })
@@ -406,7 +412,7 @@ export function testModel(
 
       const results = await main.findAndJoin({ alias: { name: "keep" } })
       expect(results.length).toBe(1)
-      expect(results[0].alias.name).toBe("keep")
+      expect(results[0]!.alias.name).toBe("keep")
     })
 
     it("counts with simple filter", async () => {
@@ -438,14 +444,14 @@ export function testModel(
           field: "asc"
         }
       })
-      expect(result[0].field).toBe("aaa")
-      expect(result[1].field).toBe("bbb")
+      expect(result[0]!.field).toBe("aaa")
+      expect(result[1]!.field).toBe("bbb")
     })
 
     it("can order findAndJoin by top-level field descending", async () => {
       const result = await Two.findAndJoin({ field: { $in: ["aaa", "bbb"] } }, { order: { field: "desc" } })
-      expect(result[0].field).toBe("bbb")
-      expect(result[1].field).toBe("aaa")
+      expect(result[0]!.field).toBe("bbb")
+      expect(result[1]!.field).toBe("aaa")
     })
 
     it("can order findAndJoin by related string field", async () => {
@@ -460,9 +466,9 @@ export function testModel(
         { one: { test: { $in: ["alpha", "beta", "gamma"] } } },
         { order: { "one.test" : "asc" } }
       )
-      expect(result[0].one.test).toBe("alpha")
-      expect(result[1].one.test).toBe("beta")
-      expect(result[2].one.test).toBe("gamma")
+      expect(result[0]!.one.test).toBe("alpha")
+      expect(result[1]!.one.test).toBe("beta")
+      expect(result[2]!.one.test).toBe("gamma")
     })
 
   })
@@ -471,7 +477,7 @@ export function testModel(
 
   it("can order Model.find ascending", async () => {
     const schema = Type.Object({ test: Type.Number() })
-    const model = new Model(schema, { name: "test", db: connection })
+    const model = new Model(schema, { name: "test" })
 
     await model.insert({ test: 100 })
     await model.insert({ test: 200 })
@@ -480,25 +486,25 @@ export function testModel(
       { test: { $in: [100, 200] } },
       { order: { test: "asc" } }
     )
-    expect(result[0].test).toBe(100)
-    expect(result[1].test).toBe(200)
+    expect(result[0]!.test).toBe(100)
+    expect(result[1]!.test).toBe(200)
   })
 
   it("can order Model.find descending", async () => {
     const schema = Type.Object({ test: Type.Number() })
-    const model = new Model(schema, { name: "test", db: connection })
+    const model = new Model(schema, { name: "test" })
 
     const result = await model.find(
       { test: { $in: [100, 200] } },
       { order: { test: "desc" } }
     )
-    expect(result[0].test).toBe(200)
-    expect(result[1].test).toBe(100)
+    expect(result[0]!.test).toBe(200)
+    expect(result[1]!.test).toBe(100)
   })
 
   it("can use order with limit on Model.find", async () => {
     const schema = Type.Object({ test: Type.Number() })
-    const model = new Model(schema, { name: "test", db: connection })
+    const model = new Model(schema, { name: "test" })
 
     await model.insert({ test: 300 })
     await model.insert({ test: 400 })
@@ -508,7 +514,7 @@ export function testModel(
       { order: { test: "asc" }, limit: 1 }
     )
     expect(result.length).toBe(1)
-    expect(result[0].test).toBe(300)
+    expect(result[0]!.test).toBe(300)
   })
 
 }

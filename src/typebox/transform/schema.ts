@@ -1,11 +1,11 @@
 import { Field } from "../../core"
-import { TSchema } from "@sinclair/typebox"
-import { Model } from "../model"
+import type { TSchema } from "@sinclair/typebox"
 import { parseProperty } from "./property"
+import type { RefSchema } from "./property"
 
 export function parseSchema(
-  object: TSchema,
-  references: Model<TSchema>[] = []
+  object     : TSchema,
+  references : RefSchema[] = []
 ) {
   const schema: Record<string, Field> = {}
 

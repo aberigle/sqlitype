@@ -1,15 +1,23 @@
-import { Model } from "../../typebox"
-import { FieldType } from "./types"
+import type { FieldType } from "./types"
+
+export interface RefModel {
+  table  : string
+  fields : Record<string, Field>
+  ensure() : Promise<Record<string, Field>>
+  cast(value: any) : any
+  transform(item: any) : any
+  toJSON_OBJECT(options?: { alias?: string, nested?: string[] }) : string
+}
 
 export default class Field {
-  ref?: Model<any>
+  ref?: RefModel
 
   constructor(
     public type     : FieldType,
     public required : boolean = true
   ) {}
 
-  reference(model: Model<any>) {
+  reference(model: RefModel) {
     this.ref = model
     return this
   }

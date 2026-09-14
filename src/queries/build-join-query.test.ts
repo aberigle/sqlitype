@@ -1,10 +1,11 @@
-import { Client } from '@libsql/client';
+import type { Client } from '@libsql/client';
 import { Type } from '@sinclair/typebox';
 import Database from 'bun:sqlite';
-import { describe, expect, it } from 'bun:test';
+import { beforeAll, describe, expect, it } from 'bun:test';
 
 import { Model, ModelReference } from "../typebox";
 import { buildJoinQuery } from "./build-join-query";
+import { setDefaultConnection } from '../core';
 
 describe('queries', () => describe("build-join-query (bun)", () => testBuildJoinQuery(new Database())))
 
@@ -12,10 +13,12 @@ export function testBuildJoinQuery(
   connection: Database | Client
 ) {
 
+  beforeAll(() => setDefaultConnection(connection))
+
   it("builds simple query without joins", async () => {
     const fields = await new Model(Type.Object({
       name: Type.String()
-    }, { $id: "test" }), { db: connection }).ensure()
+    }, { $id: "test" })).ensure()
 
     const result = await buildJoinQuery(fields, "test", {})
 
@@ -28,7 +31,7 @@ export function testBuildJoinQuery(
   it("builds query with basic WHERE", async () => {
     const fields = await new Model(Type.Object({
       name: Type.String()
-    }, { $id: "test" }), { db: connection }).ensure()
+    }, { $id: "test" })).ensure()
 
     const result = await buildJoinQuery(fields, "test", { name: "Pepa" })
 
@@ -37,11 +40,11 @@ export function testBuildJoinQuery(
   })
 
   it("builds INNER JOIN for required reference", async () => {
-    const one = new Model(Type.Object({ test: Type.String() }, { $id: "inner_one" }), { db: connection })
+    const one = new Model(Type.Object({ test: Type.String() }, { $id: "inner_one" }))
 
     const fields = await new Model(Type.Object({
       one: ModelReference(one)
-    }, { $id: "inner_two" }), { db: connection }).ensure()
+    }, { $id: "inner_two" })).ensure()
 
     const result = await buildJoinQuery(fields, "inner_two", { one: { test: "hi" } })
 
@@ -51,11 +54,11 @@ export function testBuildJoinQuery(
   })
 
   it("builds LEFT JOIN for optional reference", async () => {
-    const one = new Model(Type.Object({ test: Type.String() }, { $id: "left_one" }), { db: connection })
+    const one = new Model(Type.Object({ test: Type.String() }, { $id: "left_one" }))
 
     const fields = await new Model(Type.Object({
       one: Type.Optional(ModelReference(one))
-    }, { $id: "left_two" }), { db: connection }).ensure()
+    }, { $id: "left_two" })).ensure()
 
     const result = await buildJoinQuery(fields, "left_two", { one: { test: "hi" } })
 
@@ -63,11 +66,11 @@ export function testBuildJoinQuery(
   })
 
   it("uses field name as alias when it differs from table name", async () => {
-    const one = new Model(Type.Object({ test: Type.String() }, { $id: "alias_one" }), { db: connection })
+    const one = new Model(Type.Object({ test: Type.String() }, { $id: "alias_one" }))
 
     const fields = await new Model(Type.Object({
       alias: ModelReference(one)
-    }, { $id: "alias_two" }), { db: connection }).ensure()
+    }, { $id: "alias_two" })).ensure()
 
     const result = await buildJoinQuery(fields, "alias_two", { alias: { test: "keep" } })
 
@@ -77,11 +80,11 @@ export function testBuildJoinQuery(
   })
 
   it("includes JSON_OBJECT in select for joined fields", async () => {
-    const one = new Model(Type.Object({ test: Type.String(), slug: Type.String() }, { $id: "json_one" }), { db: connection })
+    const one = new Model(Type.Object({ test: Type.String(), slug: Type.String() }, { $id: "json_one" }))
 
     const fields = await new Model(Type.Object({
       one: ModelReference(one)
-    }, { $id: "json_two" }), { db: connection }).ensure()
+    }, { $id: "json_two" })).ensure()
 
     const result = await buildJoinQuery(fields, "json_two", { one: { test: "hi" } })
 
@@ -91,13 +94,13 @@ export function testBuildJoinQuery(
   })
 
   it("handles multiple reference fields", async () => {
-    const one  = new Model(Type.Object({ test: Type.String() }, { $id: "multi_one" }), { db: connection })
-    const user = new Model(Type.Object({ email: Type.String() }, { $id: "multi_user" }), { db: connection })
+    const one  = new Model(Type.Object({ test: Type.String() }, { $id: "multi_one" }))
+    const user = new Model(Type.Object({ email: Type.String() }, { $id: "multi_user" }))
 
     const fields = await new Model(Type.Object({
       one: ModelReference(one),
       assigned: Type.Optional(ModelReference(user))
-    }, { $id: "multi_two" }), { db: connection }).ensure()
+    }, { $id: "multi_two" })).ensure()
 
     const result = await buildJoinQuery(fields, "multi_two", {
       one: { test: "hi" },
@@ -111,16 +114,16 @@ export function testBuildJoinQuery(
   })
 
   it("handles nested joins (relation of relation)", async () => {
-    const another = new Model(Type.Object({ city: Type.String() }, { $id: "nested_another" }), { db: connection })
+    const another = new Model(Type.Object({ city: Type.String() }, { $id: "nested_another" }))
 
     const one = new Model(Type.Object({
       test: Type.String(),
       another: ModelReference(another)
-    }, { $id: "nested_one" }), { db: connection })
+    }, { $id: "nested_one" }))
 
     const fields = await new Model(Type.Object({
       one: ModelReference(one)
-    }, { $id: "nested_two" }), { db: connection }).ensure()
+    }, { $id: "nested_two" })).ensure()
 
     const result = await buildJoinQuery(fields, "nested_two", {
       one: { test: "hi", another: { city: "Madrid" } }

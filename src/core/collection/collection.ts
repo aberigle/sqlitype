@@ -1,31 +1,30 @@
 import { isEmpty } from "../../utils/objects"
 
+import { buildOrderClause } from "../../queries/build-order"
+import { buildWhere } from "../../queries/build-where"
+import { connection } from "../connection"
+import { Connection } from "../connection/connection"
+import type { SqliteDriver } from "../connection/types"
 import { Field } from "../field"
 import { deduceFields } from "../field/deduce-field"
 import { parseFieldListFromDb } from "../field/parse-field"
 import { getFieldDefinition, getFieldName } from "../field/serialize"
-import { buildWhere } from "../../queries/build-where"
-import { buildOrderClause } from "../../queries/build-order"
-import { FindOptions } from "../types"
+import type { PragmaResult } from "../field/types"
+import type { FindOptions } from "../types"
 
 const ID_FIELD = "id"
 
 export default class Collection {
-  db: any
-  table: string
-  fields: Record<string, Field>
+  connection : Connection
+  table      : string
+  fields     : Record<string, Field>
 
   constructor(
-    db: any,
-    name: string
+    db   : SqliteDriver,
+    name : string
   ) {
-    this.db = db
+    this.connection = connection(db)
     this.table = name
-    this.fields = {}
-  }
-
-  setDb(db) {
-    this.db = db
     this.fields = {}
   }
 
@@ -53,12 +52,7 @@ export default class Collection {
   async run(
     query: string
   ) {
-    if (!this.db) return {}
-
-    if (this.db.query) return this.db.query(query).run()
-
-    let result = await this.db.execute(query)
-    return result.rows
+    return this.connection.run(query)
   }
 
   async execute(
@@ -67,18 +61,7 @@ export default class Collection {
   ) {
 
     try {
-      if (this.db.query) return this.db.query(query).all(params)
-
-      let result = await this.db.execute({
-        sql: query, args: params
-      })
-
-      const columns: string[] = result.columns
-      return result.rows
-        .map(item => columns.reduce((result, key, index) => {
-          result[key] = item[index]
-          return result
-        }, {}))
+      return await this.connection.execute(query, params)
     } catch (error) {
       console.log(query, params, error)
       return []
@@ -108,12 +91,13 @@ export default class Collection {
 
     if (sql.length) query += `WHERE ${sql} `
 
-    query += buildOrderClause(options.order || {}, fields)
-    if (options.limit) query += ` LIMIT ${options.limit} `
+    if (options.order)  query += buildOrderClause(options.order, fields)
+    if (options.limit)  query += ` LIMIT ${options.limit} `
     if (options.offset) query += ` OFFSET ${options.offset} `
 
     let result = await this.execute(query, args)
-    return result.map(item => this.transform(item))
+    return result
+    .map(item => this.transform(item))
   }
 
   async insert(
@@ -133,9 +117,9 @@ export default class Collection {
     }
 
     let query = `INSERT INTO ${this.table} `
-    query += `(${names.join(",")})`
-    query += `VALUES (${values.map(_ => '?').join(",")}) `
-    query += `RETURNING *`
+    query    += `(${names.join(",")})`
+    query    += `VALUES (${values.map(_ => '?').join(",")}) `
+    query    += `RETURNING *`
 
     let result = await this.execute(query, values)
     return this.transform(result[0])
@@ -156,23 +140,26 @@ export default class Collection {
   ) {
     if (isEmpty(model)) return this.findById(id)
 
-    let clone  = Object.assign({}, model)
+    let clone  = Object.assign({}, model) as any
     let fields = await this.ensure(deduceFields(clone))
 
-    const values: Array<any> = []
-    const names: string[] = []
+    const values : Array<any> = []
+    const names  : string[]   = []
+
     for (let [
       name,
       field
     ] of Object.entries(fields)) if (clone[name] !== undefined) {
+
       values.push(field.cast(clone[name]))
       names.push("'" + getFieldName(name, field) + "'")
+
     }
 
     let query = `UPDATE ${this.table} SET `
-    query += names.map(field => `${field} = ?`).join(",")
-    query += ` WHERE ${ID_FIELD} = ${id} `
-    query += `RETURNING *`
+    query    += names.map(field => `${field} = ?`).join(",")
+    query    += ` WHERE ${ID_FIELD} = ${id} `
+    query    += `RETURNING *`
 
     const [result] = await this.execute(query, values)
 
@@ -182,16 +169,18 @@ export default class Collection {
   async ensure(
     fields: Record<string, Field> = {}
   ): Promise<Record<string, Field>> {
-    if (isEmpty(this.fields))
-      this.fields = parseFieldListFromDb(await this.execute(`PRAGMA table_info(${this.table})`))
+    if (isEmpty(this.fields)) {
+      const pragma = await this.execute(`PRAGMA table_info(${this.table})`) as PragmaResult[]
+      this.fields = parseFieldListFromDb(pragma)
+    }
 
     // check if we are missing any required field
     let missing = Object.keys(fields)
-      .filter(key => !(key in this.fields) || !this.fields[key].compare(fields[key]))
+      .filter((key) => !(key in this.fields) || !this.fields[key]?.compare(fields[key] as Field))
       .reduce((result, key) => {
-        result[key] = fields[key]
+        result[key] = fields[key] as Field
         return result
-      }, {})
+      }, {} as Record<string, Field>)
 
     if (isEmpty(missing)) return { ...this.fields, ...fields }
 
@@ -223,7 +212,7 @@ export default class Collection {
     fields: Record<string, Field>
   ) {
     for (let key of Object.keys(fields)) {
-      let query = `ALTER TABLE ${this.table} ADD COLUMN ${getFieldDefinition(key, fields[key])}`
+      let query = `ALTER TABLE ${this.table} ADD COLUMN ${getFieldDefinition(key, fields[key] as Field)}`
       await this.run(query)
     }
 

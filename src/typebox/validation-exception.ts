@@ -1,5 +1,4 @@
-import { ValueError } from "@sinclair/typebox/build/cjs/value";
-
+import type { ValueError } from "@sinclair/typebox/errors";
 export class ValidationException extends Error {
 
   constructor(

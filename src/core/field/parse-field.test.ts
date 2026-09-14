@@ -55,37 +55,37 @@ describe("fields", () => {
     it("numbers", () => {
       let field = parseFieldListFromDb([numberField])
       expect("number" in field).toBeTruthy()
-      expect(field.number.type).toBe("number")
+      expect(field.number!.type).toBe("number")
     })
 
     it("strings", () => {
       let field = parseFieldListFromDb([stringField])
       expect("string" in field).toBeTruthy()
-      expect(field.string.type).toBe("string")
+      expect(field.string!.type).toBe("string")
     })
 
     it("booleans", () => {
       let field = parseFieldListFromDb([booleanField])
       expect("boolean" in field).toBeTruthy()
-      expect(field.boolean.type).toBe("boolean")
+      expect(field.boolean!.type).toBe("boolean")
     })
 
     it("dates", () => {
       let field = parseFieldListFromDb([dateField])
       expect("date" in field).toBeTruthy()
-      expect(field.date.type).toBe("date")
+      expect(field.date!.type).toBe("date")
     })
 
     it("objects", () => {
       let field = parseFieldListFromDb([objectField])
       expect("object" in field).toBeTruthy()
-      expect(field.object.type).toBe("object")
+      expect(field.object!.type).toBe("object")
     })
 
     it("arrays", () => {
       let field = parseFieldListFromDb([arrayField])
       expect("array" in field).toBeTruthy()
-      expect(field.array.type).toBe("array")
+      expect(field.array!.type).toBe("array")
     })
   })
 })

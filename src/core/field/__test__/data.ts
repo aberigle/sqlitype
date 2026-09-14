@@ -1,4 +1,4 @@
-import { PragmaResult } from "../types"
+import type { PragmaResult } from "../types"
 
 export const numberField  : PragmaResult = { name: "number",           type: "REAL",    pk: false, notnull : false, cid : 0 }
 export const stringField  : PragmaResult = { name: "string",           type: "TEXT",    pk: false, notnull : false, cid : 0 }

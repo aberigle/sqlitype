@@ -22,10 +22,10 @@ function resolveColumn(
 }
 
 export function buildOrderClause(
-  order  : Record<string, "asc" | "desc">,
+  order  : Record<string, "asc" | "desc" | undefined>,
   fields : Record<string, Field>
 ): string {
-  const entries = Object.entries(order)
+  const entries = Object.entries(order).filter(([, value]) => value)
   if (!entries.length) return ""
 
   const clauses = entries

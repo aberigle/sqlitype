@@ -1,29 +1,92 @@
 # sqlitype
 
-## Introduction
+Mini typed ORM for SQLite: TypeBox schemas that infer to TypeScript, with runtime validation and type-safe CRUD.
 
-sqlitype is a mini ORM for working with SQLite databases that combines:
+## Install
 
-- **Compile-time type validation** (TypeScript)
-- **Runtime data validation** (TypeBox)
-- **Type-safe CRUD operations**
-- **Support for model relationships**
+```
+$ bun add sqlitype @sinclair/typebox
+```
 
-## Key Concepts
-
-### 🤔 Defining Models
-
-Models represent your database tables. Each model requires:
-
-- A TypeBox schema defining the structure
-- Basic configuration (table name and DB connection)
+## Usage
 
 ```typescript
 import { Type } from '@sinclair/typebox';
 import sqlitype from 'sqlitype';
 import Database from 'bun:sqlite';
 
-// Schema definition
+const User = Type.Object({              // const User = {
+  id    : Type.Number(),                //   type: 'object',
+  name  : Type.String(),                //   required: ['id', 'name', 'email'],
+  email : Type.String(),                //   properties: {
+  age   : Type.Optional(Type.Number())  //     id: { type: 'number' },
+}, {                                    //     name: { type: 'string' },
+  $id : "Users"                         //     email: { type: 'string' }
+});                                     //     ...
+                                        //
+type User = Static<typeof User>;        // type User = {
+                                        //   id: number,
+                                        //   name: string,
+                                        //   email: string,
+                                        //   age?: number
+                                        // }
+
+const Users = new sqlitype.Model(User);
+
+sqlitype.useClient(new Database('mydb.sqlite'));
+
+const mary = await Users.insert({       // const mary: User
+  name: "Maria Garcia",
+  email: "maria@example.com",
+  age: 28
+});
+```
+
+## Overview
+
+sqlitype combines:
+
+- **Compile-time validation** (TypeScript)
+- **Runtime validation** (TypeBox)
+- **Type-safe CRUD** over SQLite (bun:sqlite or libSQL)
+- **Model relationships** with `findAndJoin`
+- **Multiple DBs** with `connection` + `using` (see [Connections](#-connections-multi-tenant))
+
+Works with two backends: `bun:sqlite` (local file) and `@libsql/client` (Turso / remote).
+
+```typescript
+import Database from 'bun:sqlite';
+import { createClient } from '@libsql/client';
+
+sqlitype.useClient(new Database('mydb.sqlite')); // local
+sqlitype.useClient(createClient({ url: "libsql://...", authToken: "..." })); // remote
+```
+
+sqlitype creates or updates tables to keep them in sync with your schema (within SQLite's capabilities).
+
+## Contents
+
+- [Defining models](#-defining-models)
+- [Inserting](#-inserting-data)
+- [Querying](#-querying-data)
+- [Sorting, limiting, paginating](#-sorting-limiting-and-paginating)
+- [Updating](#-updating-data)
+- [Relationships](#-model-relationships)
+- [Counting](#-counting-results)
+- [Supported types](#supported-data-types)
+- [Connections (multi-tenant)](#-connections-multi-tenant)
+
+## Key concepts
+
+### 🤔 Defining models
+
+Models represent your tables. Each model needs a TypeBox schema with `$id` (= table name).
+
+```typescript
+import { Type } from '@sinclair/typebox';
+import sqlitype from 'sqlitype';
+import Database from 'bun:sqlite';
+
 const User = Type.Object({
   id    : Type.Number(),
   name  : Type.String(),
@@ -34,30 +97,21 @@ const User = Type.Object({
   $id : "Users" // table name
 });
 
-// Infer TypeScript type
 type User = Static<typeof User>;
 
-// Model creation
 const Users = new sqlitype.Model(User);
 
-sqlitype.useConnection(new Database('mydb.sqlite'));
+sqlitype.useClient(new Database('mydb.sqlite'));
 
 // You can also use fromTypebox
-const Users = sqlitype.fromTypebox(UserSchema);
-```
-sqlitype automatically creates or updates tables to keep them synchronized with your schema (within SQLite's capabilities).
-
-You can switch the connection at any time with `useClient`:
-```typescript
-sqlitype.useClient(new Database('other.db'));
-// All existing models will use the new connection
+const Users = sqlitype.fromTypebox(User);
 ```
 
-### 📀 Inserting Data
+### 📀 Inserting data
 
-sqlitype uses TypeBox runtime validation before inserting new data. You'll get TypeScript compile-time checks 😍
+TypeBox runtime validation before insert. TypeScript checks at compile time 😍
 
-Validation errors follow [TypeBox's error format](https://github.com/sinclairzx81/typebox?tab=readme-ov-file#values-errors).
+Errors follow [TypeBox's format](https://github.com/sinclairzx81/typebox?tab=readme-ov-file#values-errors).
 
 ```typescript
 const newUser = await Users.insert({
@@ -69,7 +123,8 @@ const newUser = await Users.insert({
 console.log(newUser.id); // Auto-generated ID
 ```
 
-If data fails validation it throws an error:
+If data fails validation it throws:
+
 ```typescript
 try {
   await Users.insert({ name: "Pepe", email: 123 }); // Error! email must be string
@@ -78,12 +133,13 @@ try {
   console.log(e.errors);  // Array of TypeBox ValueError
 }
 ```
-### 🔍 Querying Data
+
+### 🔍 Querying data
 
 Available methods:
 
-- find({...}) - With filters
-- findById(id) - By unique ID
+- `find({...})` - With filters
+- `findById(id)` - By unique ID
 
 ```typescript
 // All users
@@ -153,18 +209,17 @@ const books = await Books.findAndJoin(
 
 TypeScript autocompletes valid paths based on the model schema.
 
-### 📝 Updating Data
+### 📝 Updating data
+
 ```typescript
 const updated = await Users.update(1, {
   age: 29  // New value
 });
 ```
 
-### 🫂 Model Relationships
+### 🫂 Model relationships
 
-Define relationships between models using `ModelReference`
-
-Relationships can be required or optional:
+Defined with `ModelReference`. Required or optional:
 
 ```typescript
 const Book = Type.Object({
@@ -175,14 +230,7 @@ const Book = Type.Object({
 }, { $id : "Book" })
 ```
 
-You can filter optional references by null:
-```typescript
-// Books without editor
-const withoutEditor = await Books.find({ editor: null })
-
-// Books with editor
-const withEditor = await Books.find({ editor: { $ne: null } })
-```
+Full example:
 
 ```typescript
 // Author model
@@ -209,7 +257,17 @@ const book = await Books.insert({
 });
 ```
 
-You can then filter by these relationships using `findAndJoin` in various ways:
+You can filter optional references by null:
+
+```typescript
+// Books without editor
+const withoutEditor = await Books.find({ editor: null })
+
+// Books with editor
+const withEditor = await Books.find({ editor: { $ne: null } })
+```
+
+Then filter with `findAndJoin` in various ways:
 
 ```typescript
 const [bookWithAuthor] = await Books.findAndJoin({
@@ -231,7 +289,8 @@ const books = await Books.findAndJoin({
 }); // all books with "solitude" in title written by someone named Gabriel 😳
 ```
 
-You can also combine operators on nested relation fields:
+You can also combine operators on nested fields:
+
 ```typescript
 // Books whose author is NOT named Gabriel, or books without author
 const books = await Books.findAndJoin({
@@ -249,6 +308,7 @@ const books = await Books.findAndJoin({
 ```
 
 With optional relationships you can populate even when null:
+
 ```typescript
 // Populates the author, even if editor is null
 const [book] = await Books.findAndJoin({
@@ -280,12 +340,52 @@ const books = await Books.count({ author: { name: "%Gabriel%" } });
 
 ## Supported data types
 
-| TypeBox	| SQLite|	Description |
+| TypeBox | SQLite | Description |
 |-|-|-|
-|Type.String()|	TEXT|	Texts
-|Type.Number()|	REAL|	Numbers
-|Type.Boolean()|	INTEGER	|Flags
-|Type.Date()	|INTEGER	|Dates (stored as timestamp)
-|Type.Object()|	TEXT	| JSON data (stored as text)
-|Type.Any()|TEXT| JSON data  (stored as text)
-|Type.Array()|	TEXT	|listas (stored as text)
+|Type.String()| TEXT| Texts
+|Type.Number()| REAL| Numbers
+|Type.Boolean()| INTEGER |Flags
+|Type.Date() |INTEGER |Dates (stored as timestamp)
+|Type.Object()| TEXT | JSON data (stored as text)
+|Type.Any()|TEXT| JSON data (stored as text)
+|Type.Array()| TEXT |lists (stored as text)
+
+## 🔌 Connections (multi-tenant)
+
+By default all models use the connection set with `useClient`. For parallel DBs, bind a definition to a connection with `using`:
+
+```typescript
+import Database from 'bun:sqlite';
+
+const main = sqlitype.connection(new Database('main.sqlite'), { name: "main" });
+const tenantA = sqlitype.connection(new Database('tenant-a.sqlite'), { name: "tenant:a" });
+
+// Same definition, two isolated DBs
+const mainUsers = Users.using("main");
+const tenantUsers = Users.using("tenant:a");
+// Users.using(conn) with the direct handle returns the same cached model
+```
+
+Bound models are lazy: they are only created/mapped in the DB when actually used (plus their relations). You can have models that only live in one DB and models that only live in another — the system creates just the ones you use on each connection.
+
+### Connection resolution
+
+By default `using("name")` resolves through the `name` registered in `connection(db, { name })`. To resolve whatever DB / `Connection` you want from a name, register an adhoc function with `resolveConnection`:
+
+```typescript
+sqlitype.resolveConnection((key) =>
+  sqlitype.connection(new Database(`${key}.sqlite`), { name: key })
+);
+
+const users = Users.using("tenant:x"); // materializes + registers, next call reuses
+Users.using("ghost");                  // throws "UnknownConnection" with no registry nor hook
+```
+
+Order: explicit registry → `resolveConnection` → `UnknownConnection`.
+
+Switching the default connection reuses the pool, destroying nothing:
+
+```typescript
+sqlitype.useClient(new Database('other.db'));
+sqlitype.useClient("main"); // same pooled Connection
+```
