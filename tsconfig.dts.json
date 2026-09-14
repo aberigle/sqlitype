@@ -6,13 +6,19 @@
     "**/__test__/**",
     "**/*.test.ts",
     "dist",
-    "build.ts"
+    "build.ts",
+    "mcp",
+    "example"
   ],
   "compilerOptions": {
+    "noEmit": false,
+    "strict": false,
+    "verbatimModuleSyntax": false,
+    "noUncheckedIndexedAccess": false,
+    "noImplicitOverride": false,
     "declaration": true,
     "emitDeclarationOnly": true,
     "outDir": "./dist",
-    "moduleResolution": "node",
-    "baseUrl": ".",
+    "allowImportingTsExtensions": false
   }
 }
