@@ -22,7 +22,7 @@ export function testConnectionModel(factory: () => Driver) {
       Type.Object({ id: Type.Number(), name: Type.String() }, { $id: "CMCrud" })
     )
 
-    const users = conn.model(Users)
+    const users = Users.using(conn)
     const inserted = await users.insert({ name: "ana" })
 
     expect(inserted.name).toBe("ana")
@@ -40,13 +40,13 @@ export function testConnectionModel(factory: () => Driver) {
       Type.Object({ id: Type.Number(), name: Type.String() }, { $id: "CMDedupe" })
     )
 
-    const a = conn.model(Users)
-    const b = conn.model(Users)
+    const a = Users.using(conn)
+    const b = Users.using(conn)
 
     expect(b).toBe(a)
     expect(Users.using(conn)).toBe(a)
     expect(Users.using("main")).toBe(a)
-    expect(conn.models.size).toBe(1)
+    expect(conn.collections.size).toBe(1)
   })
 
   it("throws UnknownConnection for an unknown key without resolver", () => {
@@ -71,10 +71,10 @@ export function testConnectionModel(factory: () => Driver) {
       )
     )
 
-    const usersA = connA.model(User)
-    const postsA = connA.model(Post)
-    const usersB = connB.model(User)
-    const postsB = connB.model(Post)
+    const usersA = User.using(connA)
+    const postsA = Post.using(connA)
+    const usersB = User.using(connB)
+    const postsB = Post.using(connB)
 
     const alice = await usersA.insert({ name: "alice" })
     const bob = await usersB.insert({ name: "bob" })

@@ -18,7 +18,15 @@ export function testConnection(
     const a = connection(connectionDriver)
     const b = connection(connectionDriver)
 
-    expect(a.models).toBe(b.models) // misma Connection => mismo registry
+    expect(a.collections).toBe(b.collections)
+  })
+
+  it("get-or-creates one Collection per table cached by connection", () => {
+    const conn = connection(connectionDriver)
+
+    expect(conn.collection("sq_collection_cache")).toBe(conn.collection("sq_collection_cache"))
+    expect(conn.collections.get("sq_collection_cache")).toBe(conn.collection("sq_collection_cache"))
+    expect(conn.collection("sq_collection_other")).not.toBe(conn.collection("sq_collection_cache"))
   })
 
   it("runs DDL with run and reads rows with execute", async () => {

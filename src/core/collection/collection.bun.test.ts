@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'bun:test'
-import Collection from './collection';
 import Database from 'bun:sqlite';
 import type { Client } from '@libsql/client';
+import { connection } from '../connection';
 
 const db = new Database()
 function queryDB(query: string) {
@@ -11,10 +11,10 @@ function queryDB(query: string) {
 describe('collection', () => describe("bun", () => testCollection(db, queryDB)))
 
 export function testCollection(
-  connection: Database | Client,
+  driver: Database | Client,
   queryDB: (query: string) => Promise<any> | any
 ) {
-  const col = new Collection(connection, "test")
+  const col = connection(driver).collection("test")
 
   it('inserts in a new collection', async () => {
     await col.insert({ test: 1 })
