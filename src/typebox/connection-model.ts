@@ -1,7 +1,6 @@
 import { Collection } from "../core"
 import type { Field } from "../core"
 import type { Connection } from "../core/connection"
-import { registerConnectionModel } from "../core/connection/connection"
 import type { FindFilter, FindOptions } from "../core/types"
 import { buildJoinQuery } from "../queries/build-join-query"
 import { buildOrderClause } from "../queries/build-order"
@@ -27,9 +26,23 @@ export class ConnectionModel<T extends TSchema> extends Collection {
     connection: Connection,
     public definition: Model<T>,
   ) {
-    super(connection.db, definition.table)
-    this.connection = connection
+    super(connection, definition.table)
     this.schema = definition.schema
+  }
+
+
+  static bound<T extends TSchema>(
+    connection : Connection,
+    definition : Model<T>
+  ): ConnectionModel<T> {
+    const existing = connection.collections.get(definition.table)
+
+    if (existing instanceof ConnectionModel && existing.definition === definition)
+      return existing as ConnectionModel<T>
+
+    const model = new ConnectionModel(connection, definition)
+    connection.collections.set(definition.table, model)
+    return model
   }
 
 
@@ -38,18 +51,21 @@ export class ConnectionModel<T extends TSchema> extends Collection {
 
     this.bindReferences()
 
-    const references = Array.from(this.connection.models.values())
+    const references = boundReferences(this.connection)
     const parsed     = parseSchema(this.schema, references)
     return this.fields = await super.ensure(parsed)
   }
 
   private bindReferences() {
-    for (const property of Object.values(this.schema.properties)) {
+    for (const property of Object.values(this.schema.properties ?? {})) {
       const table = referencedTable(property)
-      if (!table || this.connection.models.has(table)) continue
+      if (!table) continue
+
+      const existing = this.connection.collections.get(table)
+      if (existing instanceof ConnectionModel) continue
 
       const definition = modelDefinition(table)
-      if (definition) this.connection.model(definition)
+      if (definition) ConnectionModel.bound(this.connection, definition)
     }
   }
 
@@ -59,12 +75,13 @@ export class ConnectionModel<T extends TSchema> extends Collection {
   ) {
     if (Value.Check(this.schema, model)) return true
 
+    const schemas = boundReferences(this.connection).map(reference => reference.schema)
     const errors = [
       ...Value.Errors(
         partial
           ? Type.Partial(this.schema)
           : this.schema,
-        this.connection.schemas,
+        schemas,
         model)
     ]
       .filter(({ path }) => path !== "/id")
@@ -168,7 +185,7 @@ export class ConnectionModel<T extends TSchema> extends Collection {
   }
 }
 
-registerConnectionModel(<T extends TSchema>(
-  connection : Connection,
-  definition : Model<T>
-) => new ConnectionModel<T>(connection, definition))
+function boundReferences(connection: Connection): Array<ConnectionModel<any>> {
+  return Array.from(connection.collections.values())
+    .filter((collection): collection is ConnectionModel<any> => collection instanceof ConnectionModel)
+}

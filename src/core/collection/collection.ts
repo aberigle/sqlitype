@@ -2,9 +2,7 @@ import { isEmpty } from "../../utils/objects"
 
 import { buildOrderClause } from "../../queries/build-order"
 import { buildWhere } from "../../queries/build-where"
-import { connection } from "../connection"
-import { Connection } from "../connection/connection"
-import type { SqliteDriver } from "../connection/types"
+import type { Connection } from "../connection/connection"
 import { Field } from "../field"
 import { deduceFields } from "../field/deduce-field"
 import { parseFieldListFromDb } from "../field/parse-field"
@@ -20,12 +18,12 @@ export default class Collection {
   fields     : Record<string, Field>
 
   constructor(
-    db   : SqliteDriver,
-    name : string
+    connection : Connection,
+    table      : string
   ) {
-    this.connection = connection(db)
-    this.table = name
-    this.fields = {}
+    this.connection = connection
+    this.table      = table
+    this.fields     = {}
   }
 
   toJSON_OBJECT({
@@ -56,8 +54,8 @@ export default class Collection {
   }
 
   async execute(
-    query: string,
-    params: Array<any> = []
+    query  : string,
+    params : Array<any> = []
   ) {
 
     try {

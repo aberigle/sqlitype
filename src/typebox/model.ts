@@ -2,9 +2,8 @@ import type { Static, TSchema } from "@sinclair/typebox"
 import type { Connection } from "../core/connection"
 import { getDefaultConnection, resolveConnectionKey } from "../core/connection"
 import type { FindFilter, FindOptions } from "../core/types"
-import type { ConnectionModel } from "./connection-model"
+import { ConnectionModel } from "./connection-model"
 import { registerModelDefinition } from "./definitions"
-import "./connection-model"
 
 export class Model<T extends TSchema> {
   schema : T
@@ -28,7 +27,7 @@ export class Model<T extends TSchema> {
     const conn = typeof connection === "string"
       ? resolveConnectionKey(connection)
       : connection
-    return conn.model(this)
+    return ConnectionModel.bound(conn, this)
   }
 
   private bound(): ConnectionModel<T> {

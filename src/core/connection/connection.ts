@@ -1,54 +1,27 @@
-import type { TSchema } from "@sinclair/typebox"
-import type { Model } from "../../typebox/model"
-import type { ConnectionModel } from "../../typebox/connection-model"
+import { Collection } from "../collection"
 import { type SqliteDriver } from "./types"
 
-export type ConnectionModelFactory = <T extends TSchema>(
-  connection : Connection,
-  definition : Model<T>
-) => ConnectionModel<T>
-
-let connectionModelFactory: ConnectionModelFactory | undefined
-
-
-export function registerConnectionModel(factory: ConnectionModelFactory): void {
-  connectionModelFactory = factory
-}
-
 export class Connection {
-  db     : SqliteDriver
-  name?  : string
-  models : Map<string, ConnectionModel<any>>
-  schemas: TSchema[]
+  db          : SqliteDriver
+  name?       : string
+  collections : Map<string, Collection>
 
   constructor(
     db    : SqliteDriver,
     name? : string
   ) {
-    this.db     = db
-    this.name   = name
-    this.models = new Map()
-    this.schemas = []
+    this.db          = db
+    this.name        = name
+    this.collections = new Map()
   }
 
-  model<T extends TSchema>(
-    definition: Model<T>
-  ): ConnectionModel<T> {
-    const key      = definition.table
-    const existing = this.models.get(key) as ConnectionModel<T> | undefined
+  collection(table: string): Collection {
+    const existing = this.collections.get(table)
+    if (existing) return existing
 
-    if (existing)
-      return existing
-
-    if (!connectionModelFactory)
-      throw new Error(
-        "ConnectionModel is not registered, import `sqlitype/typebox` before calling connection.model(...)"
-      )
-
-    const bound = connectionModelFactory<T>(this, definition)
-    this.models.set(key, bound)
-    this.schemas.push(bound.schema)
-    return bound
+    const created = new Collection(this, table)
+    this.collections.set(table, created)
+    return created
   }
 
   async run(
