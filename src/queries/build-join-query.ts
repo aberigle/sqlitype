@@ -1,7 +1,6 @@
 import { Field, type RefModel } from "../core/field"
 import { isEmpty } from "../utils/objects"
 import { buildWhere } from "./build-where"
-import { Model } from "src/typebox"
 
 export async function buildJoinQuery(
   fields : Record<string, Field>,

@@ -2,15 +2,15 @@ import { isEmpty } from "../../utils/objects"
 
 import { buildOrderClause } from "../../queries/build-order"
 import { buildWhere } from "../../queries/build-where"
-import { connection, resolveConnection } from "../connection"
+import { connection } from "../connection"
 import { Connection } from "../connection/connection"
 import type { SqliteDriver } from "../connection/types"
 import { Field } from "../field"
 import { deduceFields } from "../field/deduce-field"
 import { parseFieldListFromDb } from "../field/parse-field"
 import { getFieldDefinition, getFieldName } from "../field/serialize"
-import type { FindOptions } from "../types"
 import type { PragmaResult } from "../field/types"
+import type { FindOptions } from "../types"
 
 const ID_FIELD = "id"
 
