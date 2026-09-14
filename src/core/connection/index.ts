@@ -1,4 +1,4 @@
-export { Connection } from "./connection"
+export { Connection, registerConnectionModel } from "./connection"
 export type {
   SqliteDriver,
   SqliteQueryDriver,

@@ -3,12 +3,8 @@ import type { Connection } from "../core/connection"
 import { getDefaultConnection, resolveConnectionKey } from "../core/connection"
 import type { FindFilter, FindOptions } from "../core/types"
 import type { ConnectionModel } from "./connection-model"
-
-const definitions: Record<string, Model<any>> = {}
-
-export function modelDefinition(table: string): Model<any> | undefined {
-  return definitions[table]
-}
+import { registerModelDefinition } from "./definitions"
+import "./connection-model"
 
 export class Model<T extends TSchema> {
   schema : T
@@ -25,7 +21,7 @@ export class Model<T extends TSchema> {
 
     this.schema = schema
     this.table = schema.$id
-    definitions[schema.$id] = this
+    registerModelDefinition(schema.$id, this)
   }
 
   using(connection: string | Connection): ConnectionModel<T> {

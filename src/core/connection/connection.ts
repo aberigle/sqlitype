@@ -1,7 +1,19 @@
 import type { TSchema } from "@sinclair/typebox"
 import type { Model } from "../../typebox/model"
-import { ConnectionModel } from "../../typebox/connection-model"
+import type { ConnectionModel } from "../../typebox/connection-model"
 import { type SqliteDriver } from "./types"
+
+export type ConnectionModelFactory = <T extends TSchema>(
+  connection : Connection,
+  definition : Model<T>
+) => ConnectionModel<T>
+
+let connectionModelFactory: ConnectionModelFactory | undefined
+
+
+export function registerConnectionModel(factory: ConnectionModelFactory): void {
+  connectionModelFactory = factory
+}
 
 export class Connection {
   db     : SqliteDriver
@@ -28,7 +40,12 @@ export class Connection {
     if (existing)
       return existing
 
-    const bound = new ConnectionModel<T>(this, definition)
+    if (!connectionModelFactory)
+      throw new Error(
+        "ConnectionModel is not registered, import `sqlitype/typebox` before calling connection.model(...)"
+      )
+
+    const bound = connectionModelFactory<T>(this, definition)
     this.models.set(key, bound)
     this.schemas.push(bound.schema)
     return bound

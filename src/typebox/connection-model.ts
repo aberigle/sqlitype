@@ -1,6 +1,7 @@
 import { Collection } from "../core"
 import type { Field } from "../core"
 import type { Connection } from "../core/connection"
+import { registerConnectionModel } from "../core/connection/connection"
 import type { FindFilter, FindOptions } from "../core/types"
 import { buildJoinQuery } from "../queries/build-join-query"
 import { buildOrderClause } from "../queries/build-order"
@@ -8,7 +9,7 @@ import { isEmpty } from "../utils/objects"
 import type { Static, TSchema } from "@sinclair/typebox"
 import { Type } from "@sinclair/typebox"
 import { Value } from "@sinclair/typebox/value"
-import { modelDefinition } from "./model"
+import { modelDefinition } from "./definitions"
 import type { Model } from "./model"
 import { parseSchema } from "./transform/schema"
 import { ValidationException } from "./validation-exception"
@@ -166,3 +167,8 @@ export class ConnectionModel<T extends TSchema> extends Collection {
     return this.cast(result)
   }
 }
+
+registerConnectionModel(<T extends TSchema>(
+  connection : Connection,
+  definition : Model<T>
+) => new ConnectionModel<T>(connection, definition))
