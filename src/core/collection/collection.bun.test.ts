@@ -159,4 +159,16 @@ export function testCollection(
     spy.mockRestore()
   })
 
+  it('does not expose raw column names', async () => {
+    const inserted = await col.insert({ tags: ["a", "b"], active: true })
+
+    expect(Object.keys(inserted).some(key => key.includes('::'))).toBe(false)
+
+    const [found] = await col.find({ id: inserted.id })
+
+    expect(Object.keys(found).some(key => key.includes('::'))).toBe(false)
+    expect(found.tags).toEqual(["a", "b"])
+    expect(found.active).toBe(true)
+  })
+
 }

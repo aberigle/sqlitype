@@ -65,7 +65,11 @@ export default class Collection {
 
     return Object.entries(this.fields)
       .reduce((result, [name, field]) => {
-        result[name] = field.parse(result[getFieldName(name, field)])
+        const raw = getFieldName(name, field)
+
+        result[name] = field.parse(result[raw])
+        if (raw !== name) delete result[raw]
+
         return result
       }, item)
   }
