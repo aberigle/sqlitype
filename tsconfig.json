@@ -24,9 +24,7 @@
     // Some stricter flags (disabled by default)
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false,
-    // base path for tsc-alias
-    "baseUrl": "."
+    "noPropertyAccessFromIndexSignature": false
   },
   "exclude": [
     "node_modules",
