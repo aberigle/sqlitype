@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'bun:test'
+import { describe, it, expect, spyOn } from 'bun:test'
 import Database from 'bun:sqlite';
 import type { Client } from '@libsql/client';
 import { connection } from '../connection';
@@ -146,5 +146,17 @@ export function testCollection(
     expect(result.length).toBe(1)
   })
 
+  it('propagates sql errors', async () => {
+    await expect(col.execute('SELECT * FROM missing_table')).rejects.toThrow()
+  })
+
+  it('does not write sql errors to stdout', async () => {
+    const spy = spyOn(console, 'log')
+
+    await expect(col.execute('SELECT * FROM missing_table')).rejects.toThrow()
+
+    expect(spy).not.toHaveBeenCalled()
+    spy.mockRestore()
+  })
 
 }

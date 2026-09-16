@@ -57,13 +57,7 @@ export default class Collection {
     query  : string,
     params : Array<any> = []
   ) {
-
-    try {
-      return await this.connection.execute(query, params)
-    } catch (error) {
-      console.log(query, params, error)
-      return []
-    }
+    return this.connection.execute(query, params)
   }
 
   transform(item : any)  {
