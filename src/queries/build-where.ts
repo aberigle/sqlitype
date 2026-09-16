@@ -4,10 +4,10 @@ import { getFieldName } from "../core/field/serialize";
 import type { FindOperators } from "../core/types";
 
 function getActionFromFindOperator(value: any) {
-  if (value.$lt)   return { action: "<",  value: value.$lt }
-  if (value.$lte)  return { action: "<=", value: value.$lte }
-  if (value.$gte)  return { action: ">=", value: value.$gte }
-  if (value.$gt)   return { action: ">",  value: value.$gt }
+  if (value.$lt  != undefined)  return { action: "<",  value: value.$lt }
+  if (value.$lte != undefined)  return { action: "<=", value: value.$lte }
+  if (value.$gte != undefined)  return { action: ">=", value: value.$gte }
+  if (value.$gt  != undefined)  return { action: ">",  value: value.$gt }
 
   // only add if there are items in the list
   if (value.$in)  return value.$in.length  ? { action : "IN",     value: value.$in }  : null
@@ -104,8 +104,10 @@ export function buildWhere(
   const conditions : string[]              = []
   const joins      : Record<string, Field> = {}
 
-  for (const name of keys) if (fields[name]) {
+  for (const name of keys) {
     const field = fields[name]
+
+    if (!field) throw new Error(`UnknownField: ${name}`)
 
     if (
       shouldJoinReference(field, filter[name])

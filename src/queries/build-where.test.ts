@@ -34,6 +34,40 @@ describe("queries", () => {
       expect(args[0]).toEqual(2)
     })
 
+    it("supports falsy bounds in range operators", () => {
+      const zero = buildWhere({
+        number: new Field("number")
+      }, { number: { $gt: 0 } })
+
+      expect(zero.sql).toEqual(`"number" > ?`)
+      expect(zero.args).toEqual([0])
+
+      const empty = buildWhere({
+        text: new Field("string")
+      }, { text: { $lt: "" } })
+
+      expect(empty.sql).toEqual(`"text" < ?`)
+      expect(empty.args).toEqual([""])
+    })
+
+    it("supports zero as an upper bound", () => {
+      const { sql, args } = buildWhere({
+        number: new Field("number")
+      }, { number: { $lte: 0 } })
+
+      expect(sql).toEqual(`"number" <= ?`)
+      expect(args).toEqual([0])
+    })
+
+    it("supports false as a boolean bound", () => {
+      const { sql, args } = buildWhere({
+        enabled: new Field("boolean")
+      }, { enabled: { $gte: false } })
+
+      expect(sql).toEqual(`"enabled::boolean" >= ?`)
+      expect(args).toEqual([0])
+    })
+
     it("supports text", () => {
       const { sql, args } = buildWhere({
         text: new Field("string")
@@ -211,13 +245,10 @@ describe("queries", () => {
       expect(args[0]).toEqual(1)
     })
 
-    it("ignores keys not in fields", () => {
-      const { sql, args } = buildWhere({
+    it("throws on keys not in fields", () => {
+      expect(() => buildWhere({
         known: new Field("number")
-      }, { known: 1, unknown: 2 })
-
-      expect(sql).toEqual(`"known" = ?`)
-      expect(args).toEqual([1])
+      }, { known: 1, unknown: 2 })).toThrow("UnknownField: unknown")
     })
 
     it("supports null filter on ref field (IS NULL, no join)", () => {
